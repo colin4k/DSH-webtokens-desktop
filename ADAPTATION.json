@@ -1,0 +1,28 @@
+{
+  "baseRepository": "https://github.com/colin4k/DSH-webtokens",
+  "baseGitCommit": "261eba8bb66d524835c1700838cdb22d107cafd3",
+  "version": "0.2.16-desktop.1",
+  "targetHarnessTag": "dsh-v0.2.2-rc.1",
+  "targetHarnessCommit": "66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db",
+  "validation": "Node 24 Linux: 93 regression tests and packed production runtime interception smoke test; macOS Electron and live webpage not tested",
+  "sha256": {
+    "DESKTOP.md": "e79a67460a410b7171473fb377a250214a5bf6534fc0f36a8999ed0a595ab127",
+    "README.md": "6c4db2dea1f2e370b2942a0803ceeff4ec933bf9966cfabf41c590b35f4dadbc",
+    "VERIFICATION.md": "536df057fdbbedf57d9e4b25155fb268d2e6a26efd7f80c997807ccb39883ec6",
+    "bin/dsh-web-bridge.mjs": "b5bed4c5fec057575e6ea06fa963ffc982e71683f9623ddc5f5844cf498aaa82",
+    "extension/background.js": "f50f38a7b2a081fb820894e64f68fbcb8781f43d39ef9b3b9b47566ae7b1cac0",
+    "package-lock.json": "626653ed00bada020008f6aabdbc56a24d45c58073995abf2d8c019d50e995a4",
+    "package.json": "07898f6dd92abeae47b7ece1c3ead95af98731d68d64c4b055524cea6657ba81",
+    "plugins/dsh-web-bridge/cordis.patch.yml": "b009c2b8fee3825feaf9f008e9334feb798af23da34d5d333b5aaf619151c1c1",
+    "plugins/dsh-web-bridge/index.js": "97227d39d7cee81bafdf5d1f31f42e92bbb4aa35a711d30582418c31645664f7",
+    "plugins/dsh-web-bridge/package.json": "22eedd526822416c52b2fc7a388dce3350637622757ab14f7e275fbd3247ee70",
+    "pnpm-lock.yaml": "cc1b0692b3dc88c09e85587368ab4e00b39f09a070200acf864b215a6531e3ea",
+    "scripts/install-desktop.mjs": "a328180a0222b298b23bd1d6da2af0c1622b727a8378c96a202609c1b7797961",
+    "scripts/rollback-desktop.mjs": "7b79fd5105ae386d3491065e2a001aa5935397873e9b44d34d21319c59a20a8a",
+    "scripts/verify-packed-runtime.mjs": "a9937267b13e50eab38a2bf153456be32d9d0c2500b958fe0af0104f512e1a23",
+    "scripts/verify-source.mjs": "b39f3dcf8b62e4626214ffd9509352069b39a2030ed3376938ee0482a4f3395e",
+    "tests/desktop-runtime.test.mjs": "9dd799f11e06ef105b8e07a8b0fece471ec4c8a6b33c769f050d4240a273b13a",
+    "tests/installer.test.mjs": "fc1c28fa77c3e329f2b790a03c189dc2e8afcba5fcfecfc604380542104e67d0",
+    "tests/setup.test.mjs": "5afbf5473f9d2507be9ed7aef9a4a210b34478aa155eaeeb80152cc7df010ad6"
+  }
+}

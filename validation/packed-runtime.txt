@@ -1,0 +1,1 @@
+PASS: production tgz installed by pnpm 11.28.5 with autoInstallPeers=false and nodeLinker=hoisted. No local Harness core packages. Official 0.2.2-rc.1 runtime interception loads the packed bridge and settings controller, lists deepseek-web. macOS Electron and live DeepSeek webpage not tested.

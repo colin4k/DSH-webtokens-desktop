@@ -1,0 +1,2592 @@
+diff --git a/ADAPTATION.json b/ADAPTATION.json
+new file mode 100644
+index 0000000..8317b40
+--- /dev/null
++++ b/ADAPTATION.json
+@@ -0,0 +1,28 @@
++{
++  "baseRepository": "https://github.com/colin4k/DSH-webtokens",
++  "baseGitCommit": "261eba8bb66d524835c1700838cdb22d107cafd3",
++  "version": "0.2.16-desktop.1",
++  "targetHarnessTag": "dsh-v0.2.2-rc.1",
++  "targetHarnessCommit": "66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db",
++  "validation": "Node 24 Linux: 93 regression tests and packed production runtime interception smoke test; macOS Electron and live webpage not tested",
++  "sha256": {
++    "DESKTOP.md": "e79a67460a410b7171473fb377a250214a5bf6534fc0f36a8999ed0a595ab127",
++    "README.md": "6c4db2dea1f2e370b2942a0803ceeff4ec933bf9966cfabf41c590b35f4dadbc",
++    "VERIFICATION.md": "536df057fdbbedf57d9e4b25155fb268d2e6a26efd7f80c997807ccb39883ec6",
++    "bin/dsh-web-bridge.mjs": "b5bed4c5fec057575e6ea06fa963ffc982e71683f9623ddc5f5844cf498aaa82",
++    "extension/background.js": "f50f38a7b2a081fb820894e64f68fbcb8781f43d39ef9b3b9b47566ae7b1cac0",
++    "package-lock.json": "626653ed00bada020008f6aabdbc56a24d45c58073995abf2d8c019d50e995a4",
++    "package.json": "07898f6dd92abeae47b7ece1c3ead95af98731d68d64c4b055524cea6657ba81",
++    "plugins/dsh-web-bridge/cordis.patch.yml": "b009c2b8fee3825feaf9f008e9334feb798af23da34d5d333b5aaf619151c1c1",
++    "plugins/dsh-web-bridge/index.js": "97227d39d7cee81bafdf5d1f31f42e92bbb4aa35a711d30582418c31645664f7",
++    "plugins/dsh-web-bridge/package.json": "22eedd526822416c52b2fc7a388dce3350637622757ab14f7e275fbd3247ee70",
++    "pnpm-lock.yaml": "cc1b0692b3dc88c09e85587368ab4e00b39f09a070200acf864b215a6531e3ea",
++    "scripts/install-desktop.mjs": "a328180a0222b298b23bd1d6da2af0c1622b727a8378c96a202609c1b7797961",
++    "scripts/rollback-desktop.mjs": "7b79fd5105ae386d3491065e2a001aa5935397873e9b44d34d21319c59a20a8a",
++    "scripts/verify-packed-runtime.mjs": "a9937267b13e50eab38a2bf153456be32d9d0c2500b958fe0af0104f512e1a23",
++    "scripts/verify-source.mjs": "b39f3dcf8b62e4626214ffd9509352069b39a2030ed3376938ee0482a4f3395e",
++    "tests/desktop-runtime.test.mjs": "9dd799f11e06ef105b8e07a8b0fece471ec4c8a6b33c769f050d4240a273b13a",
++    "tests/installer.test.mjs": "fc1c28fa77c3e329f2b790a03c189dc2e8afcba5fcfecfc604380542104e67d0",
++    "tests/setup.test.mjs": "5afbf5473f9d2507be9ed7aef9a4a210b34478aa155eaeeb80152cc7df010ad6"
++  }
++}
+diff --git a/DESKTOP.md b/DESKTOP.md
+new file mode 100644
+index 0000000..1f58ec4
+--- /dev/null
++++ b/DESKTOP.md
+@@ -0,0 +1,94 @@
++# Desktop 0.2.2-rc.1 适配说明
++
++适配版：`dsh-web-bridge 0.2.16-desktop.1`。Chrome 扩展协议版本仍为 `0.2.19`。
++
++## 安装（macOS）
++
++1. 保持已经恢复正常的 Desktop profile，不要恢复之前导致启动失败的 profile。
++2. 通过 ⌘Q 完全退出 DeepSeek Harness。确认桌面应用菜单“管理 dsh 命令”已经安装其命令。
++3. 解压交付的 ZIP，在解压后的 `DSH-webtokens` 目录打开终端。需要 Node.js >=24.9.0。
++4. 执行：
++
++```bash
++node scripts/install-desktop.mjs /usr/local/bin/dsh
++```
++
++脚本先确认 DSH 版本，再备份完整 Desktop profile，移除已安装的旧桥接包，通过 Desktop 自带的 CLI 安装 `dist` 中的 tgz，并生成配对文件。安装失败会尝试恢复安装前的 profile，同时保留失败现场。
++
++默认 Chrome 目录：`/Users/colin/.dsh/profiles/desktop/web-bridge/chrome`。以脚本实际打印的目录为准；脚本通过 Desktop 命令获取路径，支持自定义 `DSH_HOME`。
++
++5. Chrome 打开 `chrome://extensions`，移除旧桥接扩展，加载上述目录。
++6. 在 Chrome 登录 `https://chat.deepseek.com/`，重新打开 Desktop，模型菜单选择“DeepSeek 网页”。
++7. 先发简单消息，再在一个测试项目中测试读取文件、写入文件、检查副本。真实网页、Electron 壳和用户本机环境仍需做这一轮验收。
++
++普通更新仍需退出 Desktop，运行安装脚本，再重新加载 Chrome 扩展。不要用 npm 安装的 `dsh` 管理 Desktop。
++
++## 连接诊断
++
++Desktop 正在运行时，不要通过 `dsh plugin ... exec` 执行 doctor，因为该入口会获取 profile 包管理锁。可以从解压的源码目录直接运行独立诊断命令：
++
++```bash
++node bin/dsh-web-bridge.mjs doctor --profile-dir "$HOME/.dsh/profiles/desktop"
++```
++
++正常应有 `server: true`、`paired: true`、`connected: true`。自定义 `DSH_HOME` 时换成实际 profile 目录。doctor 不打印密钥。
++
++## 回滚
++
++完全退出 Desktop，执行安装脚本输出的回滚命令，例如：
++
++```bash
++node scripts/rollback-desktop.mjs "/Users/colin/.dsh/profiles/desktop.before-web-bridge-实际时间戳"
++```
++
++回滚保存当前 profile 再恢复完整备份，不删除项目文件。Chrome 桥接扩展应同时停用。备份包含本机配对密钥和配置，不要公开上传。
++
++## 代码分析与改动
++
++| 问题 | 分析与修改 |
++|---|---|
++| 旧核心依赖污染 profile | 原包普通依赖 `dsh-llm 0.1.5-rc.2`、Schemastery 3.18.2；其传递依赖可能优先于 Desktop 运行时解析。改为 peerDependencies，只从 Desktop 复用核心；开发测试才安装 0.2.2-rc.1 核心包。生产 tgz 普通依赖仅 AJV。 |
++| 缺少版本边界 | 根包和嵌套清单声明 `engines.dsh: 0.2.2-rc.1`，其他 DSH 版本会被兼容性检查拒绝，不要求用户绕过检查。 |
++| 安装时还没有 token | 原 bundle 从环境变量读取 token，未配对就尝试启动。改为从 `profileContext.dir/web-bridge/token` 读取；未配对只记录提示，不注册不可用模型，不阻断设置读取。 |
++| 配置变更过多 | 新 setup 只准备配对和扩展文件；不再追加 token/config 到 `cordis.patch.yml`。若有旧 setup 标记块，先备份原文件，再仅移除该块；其他 patch 不变。 |
++| CLI 返回 0 但未执行 | 入口比较 argv 和模块路径的原始字符串，会受符号链接影响。改为比较 realpath，增加 symlink 回归测试。 |
++| 3081 冲突 | 启动 broker 失败时记录错误并停止该桥接，不注册失效适配器；设置服务仍可调用。 |
++| Chrome 配对文件缺失 | 捕获配置 fetch/JSON/格式错误，在扩展状态中给出 setup 指引，避免顶层未处理 Promise rejection。 |
++| UI 是否改成 desktop 平台 | 不改。Desktop 本身加载共享 Web 客户端；原 client 的 `platform: web`、ModuleLoader 和认证的同源路由适用于该设计。不是把字符串改成 desktop 就能完成适配。 |
++
++原崩溃报告没有 RPC 业务错误正文，因此这些改动解决已确认的结构性兼容风险，不能证明用户那一次崩溃只有某一个原因。
++
++## 验证范围
++
++已在 Node 24 / Linux 下用官方发布的 `0.2.2-rc.1` 包验证：
++
++- 真实 Loader、profile 配置合成、ConfigEditor、Settings、SettingsController、LlmRuntime 一起启动。
++- 未配对时设置读取仍正常；已配对能发现模型、执行新版 `prepareCall` 和标题流。
++- 通过模拟 Chrome worker 的认证 HTTP 请求完成工具调用和最终回复回传。
++- 端口冲突不影响设置读取；setup 符号链接入口、旧配置迁移和幂等性。
++- 原有协议、正文保真、工具参数校验、取消、上下文续接、面板回归。
++
++没有运行 macOS Electron 应用、真实 DeepSeek 登录或真实网页 DOM 端到端验收；不宣称已在用户 Mac 上实测成功。安装脚本保留备份和回滚。
++
++## 源码依据
++
++插件基线：`colin4k/DSH-webtokens`，提交 `261eba8bb66d524835c1700838cdb22d107cafd3`。
++
++Harness：官方 tag `dsh-v0.2.2-rc.1`，提交 `66491b05e3f05ad35bcdd4f6cd7ed26041d9e3db`。
++
++- [Desktop 的安装归属与 CLI](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.1/apps/desktop/README.zh.md)
++- [profile 包解析与初始化](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.1/packages/boot/app-boot/src/profile.ts)
++- [Desktop welcome settings RPC](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.1/apps/desktop/src/welcome-backend.ts)
++- [新版 LlmAdapter / LlmRuntime](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.1/packages/llm/llm/src/index.ts)
++
++## 开发与打包
++
++```bash
++npm ci --ignore-scripts
++npm test
++npm run verify:source
++mkdir -p dist
++npm pack --pack-destination dist
++```
++
++补丁基于上述插件提交。先在干净 checkout 执行 `git apply --check DSH-webtokens-Desktop-0.2.2-rc.1.patch`，再应用；不要在已修改的目录盲目覆盖。开发用 npm lock 和 pnpm lock 均随适配源码提供。生产用户直接使用交付的 tgz，无需安装开发依赖。
+diff --git a/README.md b/README.md
+index 30bd396..78d6d83 100644
+--- a/README.md
++++ b/README.md
+@@ -1,101 +1,19 @@
+-# DSH WebTokens · DeepSeek 网页桥接
++# DSH WebTokens — Desktop 0.2.2-rc.1 适配版
+ 
+-把已登录的 DeepSeek 网页作为算力接入 **DeepSeek Harness（DSH）** 的模型菜单，让 Harness 在本机完成工具调用、多轮任务、验证与修复。
++将已登录的 Chrome DeepSeek 网页接入 DeepSeek Harness Desktop 的“DeepSeek 网页”模型。
+ 
+-本仓库是第三方桥接插件。稳定核心来自 `82440ec209d50d5e8063119cc5e19c84ac9f0ebc`，DSH 插件 **0.2.15**，Chrome 扩展 **0.2.19**。当前仅支持DeepSeek网页，其他模型网页正在验证中。
++本分支版本 `0.2.16-desktop.1`，仅面向 Desktop `0.2.2-rc.1`。Chrome 扩展协议保持 `0.2.19`。
+ 
+-![DeepSeek 网页桥接插件封面](assets/deepseek-web-bridge-cover.png)
++请先阅读 [完整安装、分析、验证和回滚说明](DESKTOP.md)。
+ 
+-## 安装
++安装：退出 Desktop，在解压目录运行：
+ 
+-需要 Node.js 24+、pnpm、Chrome，以及可以正常登录使用的 DeepSeek 网页账号。已验证的 DSH CLI 版本为 `0.1.5-rc.1`。下列命令在终端执行。
+-
+-如果尚未安装 DSH：
+-
+-```sh
+-npm install -g pnpm @deepseek-ai/dsh@0.1.5-rc.1
+-```
+-
+-通过 DSH 官方插件入口安装本仓库：
+-
+-```sh
+-dsh plugin --profile web add "git+https://github.com/xinyuquan985-coder/DSH-webtokens.git#v0.2.15-deepseek"
+-dsh plugin --profile web exec dsh-web-bridge setup
+-```
+-
+-`setup` 会输出一个 **Chrome 扩展目录**，并在当前 DSH profile 内生成本机配对密钥和配置。保留这份目录，不要删除。它位于 profile 的 `web-bridge/chrome` 下，不是仓库中的 `extension` 目录，也不是 `node_modules` 中的目录。
+-
+-已有 DSH 的用户应在准备使用的 profile 中安装。如果不是 `web`，请在安装、setup、启动命令中统一替换 profile 名称。手工配置过旧桥接的用户应先备份并迁移旧条目；setup 检测到重复条目会停止，不会替你删除。
+-
+-## Chrome 插件怎么用
+-
+-1. 在 Chrome 打开 `chrome://extensions`，打开右上角 **开发者模式**。
+-2. 点击 **加载已解压的扩展程序**，选择上一步 setup 输出的 `web-bridge/chrome` 目录。
+-3. 确认卡片名称为 **DeepSeek Harness 网页桥接**，版本 **0.2.19**。同一个 Chrome 用户配置中只加载一份已配对的扩展。
+-4. 在这个 Chrome 用户配置中打开 [DeepSeek 网页](https://chat.deepseek.com/)，完成登录。
+-5. 启动 DSH；若安装前已经启动，先结束旧 DSH 进程，再重新启动：
+-
+-```sh
+-dsh web
+-```
+-
+-6. 在 Harness 输入框的模型菜单中选择 **DeepSeek 网页**（`deepseek-web`），再发送任务。不要误选需要 API 配置的 DeepSeek 型号。
+-7. 保持 Chrome 运行。扩展自动使用专用网页会话，接收并回传回答；Harness 负责执行本机工具。不要在工作中的专用会话里手动输入或删除消息。
+-8. Harness 的 **网页桥接** 面板可查看阶段、推理进度和结果。需要查看实际网页时，点击 **查看网页**，也可以使用 Chrome 扩展弹窗的 **打开桥接网页**。
+-
+-首次建议用一个测试目录发任务：“读取 test.txt，原样复制为 test-copy.txt，再读取副本核对。”检查真实文件和工具执行记录，确认完整链路。
+-
+-连接检查：
+-
+-```sh
+-dsh plugin --profile web exec dsh-web-bridge doctor
++```bash
++node scripts/install-desktop.mjs /usr/local/bin/dsh
+ ```
+ 
+-`paired: true` 表示本地配对成功；`connected: true` 表示 Chrome 已连接。若 Chrome 尚未连接，doctor 返回退出码 2。该命令不打印密钥。
+-
+-## 工作方式
+-
+-```text
+-Harness 用户任务与工具定义
+-          ↓
+-DSH 模型适配器 → 本机桥接 127.0.0.1:3081
+-          ↓
+-Chrome 扩展 → 已登录的 DeepSeek 网页
+-          ↓
+-回答校验 → Harness 原生工具调用 → 实际工具结果 → 下一轮
+-```
+-
+-- **多轮执行：** 网页返回结构化调用，桥接验证请求标识、工具名称和参数，然后交给 Harness 原生工具系统执行。结果进入下一轮上下文。
+-- **验证和修复：** 协议格式错误最多请求模型纠正一次；不会猜测缺失参数或自行拼接执行命令。工具执行结果由 Harness 回传，模型据此继续检查和修复任务；不保证任何任务都自动成功。
+-- **长任务续接：** 按网页实际传输预算分段摘要，保留近期上下文与结果；会话容量不足时切换网页会话，并携带经校验的摘要继续。
+-- **代码传输：** `DSH_CALLS`、`DSH_BODY` 是本插件定义的传输协议，不是 DeepSeek 官方 API 字段，用于完整保留大段文件正文和转义符。
+-- **职责划分：** 插件注册、任务循环、本机工具、权限管理、会话等由官方 Harness 提供；网页调度、内容采集、传输协议、校验、分段续接和桥接面板由本插件实现。
+-
+-浏览器网页自身的模型选择、登录验证、限额与服务可用性仍由 DeepSeek 决定。本插件不提供 API Key，也不解锁网页账号没有的模型。
++安装器需要 Node.js >=24.9.0，并使用 Desktop 自带命令安装交付的 tgz。它会备份完整 profile，失败时尝试回滚。然后在 Chrome 加载打印出的 `web-bridge/chrome` 目录，再启动 Desktop。
+ 
+-## 更新与排障
+-
+-更新到指定版本后，再执行一次 setup，然后在 Chrome 扩展卡片上点击 **重新加载**。已打开的旧专用网页需要刷新；先等当前任务结束，再更新。
+-
+-- **找不到“DeepSeek 网页”：** 确认安装与启动的是同一个 profile，重启 DSH，检查启动错误。setup 本身不会切换默认模型。
+-- **找不到插件命令：** 确认前面的 add 成功，且通过 `dsh plugin --profile web exec ...` 运行。
+-- **3081 端口被占用／配对失败：** 检查是否有另一个 DSH 桥接实例正在运行。本基线扩展固定连接本机 3081，同时只运行一套桥接服务。
+-- **等待扩展连接：** 确认加载了 setup 输出的目录、Chrome 正在运行、扩展未关闭。直接加载仓库 extension 目录会缺少配对文件。
+-- **网页等待登录／验证：** 点击查看网页，手动完成登录或验证，再按界面提示继续或重新提交失败任务。
+-- **后台停滞：** 点击查看网页确认实际进度；不要重复手动发送输入框内容。网页改版可能需要更新适配。
+-- **参数或正文校验失败：** 查看面板中的具体错误。插件会停止不确定调用，不会把未验证的内容当作成功结果。
+-
+-日志保存在 profile 的 `web-bridge/logs/events.jsonl`。密钥、`local-config.json`、profile 配置和日志属于本机文件，不要上传到公开仓库。发到 DeepSeek 的上下文包含任务所需的文件内容和工具结果，因此只在适合发送给该网页服务的项目中使用。
+-
+-## 源码与验证
+-
+-`SOURCE.json` 记录来自指定提交的 43 个核心、扩展与回归测试文件的 SHA-256。新增加的内容是根目录安装包元数据、setup/doctor、安装测试和公开文档；未改写基线核心文件。
+-
+-```sh
+-npm install
+-npm test
+-npm run verify:source
+-npm pack
+-```
++适配已通过官方 0.2.2-rc.1 核心包的运行时测试；macOS Electron 与真实网页仍需本机验收。不要恢复之前导致崩溃的旧 profile，不要用原 Web 安装命令替换本流程。
+ 
+-实际安装与运行检查见 [VERIFICATION.md](VERIFICATION.md)。
++项目和工具结果会发送到 DeepSeek 网页；配对 token、profile 备份和日志属于本机文件，不要上传公开仓库。
+diff --git a/VERIFICATION.md b/VERIFICATION.md
+index 0dee349..52377f7 100644
+--- a/VERIFICATION.md
++++ b/VERIFICATION.md
+@@ -1,69 +1,19 @@
+-# 发布验证记录
++# Desktop 适配验证记录
+ 
+-验证日期：2026-09-15。
++目标：官方 `dsh-v0.2.2-rc.1` / Node 24。适配版本 `0.2.16-desktop.1`。
+ 
+-## 版本与范围
++`npm test` 覆盖原有协议和网页脚本回归，以及新增的真实运行时启动、设置读取、LLM prepareCall、认证 worker 工具调用/最终文本回传、端口冲突、setup 符号链接、旧配置迁移和安装失败回滚。
+ 
+-- 指定源提交：`82440ec209d50d5e8063119cc5e19c84ac9f0ebc`。
+-- DSH 插件核心：0.2.15；打包的 Chrome 扩展：0.2.19。
+-- 核心、扩展及保留的回归测试共 43 个文件，SHA-256 全部与源提交一致，见 SOURCE.json。
+-- 新增部分：根安装包元数据、setup/doctor、本机配对与配置生成、安装回归测试、公开文档。
+-- 不包含后续豆包适配，也不包含原实验项目的官方 UI 补丁、生成作品或个人运行配置。
++生产包验证：使用 pnpm 11.28.5，在 `nodeLinker: hoisted`、`autoInstallPeers: false` 的隔离 profile 中安装 tgz。实际仅安装桥接和 AJV 依赖，不安装任何 Harness 核心包。再通过官方 createRuntimeResolution / PluginPackages 的真实解析机制启动生产包，验证设置读取和模型发现。
+ 
+-## 自动验证
++开发验证生产包：先在临时 profile 中用上述 pnpm 设置安装 dist 下的 tgz，再在源码目录运行：
+ 
+-在发布目录独立安装依赖后执行：
+-
+-```sh
+-pnpm install
+-node --test tests/*.test.mjs
+-node scripts/verify-source.mjs
+-pnpm pack
++```bash
++node scripts/verify-packed-runtime.mjs /临时/profile/绝对路径
+ ```
+ 
+-**86 项测试通过，0 失败。** 其中 84 项为源提交的桥接回归，2 项为新增安装测试。覆盖正文与转义传输、调用批次校验、消息归属、格式修复上限、摘要与续接、取消与超时、后台渲染、进度面板、配对配置以及安装幂等性。
+-
+-原实验项目的 2 项“产物目录”测试依赖额外官方 UI 修改，不属于此插件，未纳入发布包。
+-
+-## DSH 官方入口安装验证
+-
+-环境：Windows、Node.js 24.19.0、DSH CLI 0.1.5-rc.1，核心依赖锁定结果见 pnpm-lock.yaml。
+-
+-使用全新的 DSH_HOME/profile，通过官方 `dsh plugin --profile web add <tarball>` 安装本仓库生成的包，再执行 `dsh plugin --profile web exec dsh-web-bridge setup`：
+-
+-- 安装成功；DSH 自动把 `dsh-web-bridge` 注册进 profile 的 bundles。
+-- setup 生成本机密钥、配对 Chrome 目录及配置；重复运行保留原密钥和其他模型设置。
+-- 配置合成成功。
+-- 独立端口启动成功；桥接返回核心版本 0.2.15，配对认证通过。
+-- Harness 网页桥接面板返回 HTTP 200。
+-- Harness 原生模型选择接口成功选择 `deepseek-web / deepseek-web`。
+-
+-## 真实网页多轮验收
+-
+-为了不打断用户已有 DSH 与已登录的 Chrome，先独立验证发布包的普通服务模式，再让同一发布包使用其已有的 remote 模式连接当前空闲的 DeepSeek 桥接通道。没有重载或替换正在使用的 Chrome 扩展。
+-
+-新安装包在隔离 Harness 工作区执行：
+-
+-1. read 读取包含随机标记、中文、美元符号、引号、Windows 路径和末尾换行的 source.txt。
+-2. 根据真实读取结果，用 write 原样写入 copy.txt。
+-3. read 复读副本，返回核对结果与 `731 × 7 = 5117`。
+-
+-检查结果：
+-
+-| 项目 | 结果 |
+-| --- | --- |
+-| 实际工具顺序 | read → write → read |
+-| 工具结果 | 3 项，均无错误 |
+-| 副本字节内容 | 与源文件完全一致 |
+-| 源文件哈希 | 未改变 |
+-| 网页请求 | 4 次，全部完成 |
+-| 重复发送／失败事件 | 0 |
+-| Harness 回合状态 | 正常结束 |
+-| 最终回答 | 含“运行验证完成”和 5117 |
+-
+-该验收证实新安装包可参与真实 Harness 与网页工具循环；Chrome 通道报告 DeepSeek worker 0.2.19。此次未在另一个全新 Chrome 用户配置中重做登录和扩展加载，也未重复测试所有网站交互。网页改版、账号状态和限额仍可能影响运行。
++该命令仅针对测试 profile，会写入测试 bundle，绝不能指向用户 Desktop profile。
+ 
+-## GitHub 标签回装
++`npm run verify:source` 检查 SOURCE.json 的未修改基线文件，以及 ADAPTATION.json 中明确列出的改动文件。
+ 
+-推送后，在另一个全新 DSH_HOME 中按 README 的 Git URL 和 v0.2.15-deepseek 标签执行官方插件安装、setup 和配置合成，全部通过。未使用本地包路径替代远程安装。
+-
++限制：没有执行 macOS Electron 主窗口、真实 Chrome/DeepSeek 登录和真实网页端到端测试。仍需按 DESKTOP.md 在用户 Mac 上验收。模拟 worker 证明的是运行时与传输协议互通，不代表真实网页永远保持相同 DOM。
+diff --git a/bin/dsh-web-bridge.mjs b/bin/dsh-web-bridge.mjs
+index 28ee2d5..f030c78 100644
+--- a/bin/dsh-web-bridge.mjs
++++ b/bin/dsh-web-bridge.mjs
+@@ -1,8 +1,9 @@
+ #!/usr/bin/env node
+-import { readFile, writeFile, mkdir, copyFile, readdir } from 'node:fs/promises';
++import { readFile, writeFile, mkdir, copyFile, readdir, rename } from 'node:fs/promises';
+ import { resolve, join, dirname } from 'node:path';
+ import { fileURLToPath } from 'node:url';
+ import { randomBytes } from 'node:crypto';
++import { realpathSync } from 'node:fs';
+ 
+ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+ const begin = '# BEGIN DSH WEB BRIDGE (managed)';
+@@ -20,21 +21,17 @@ async function context(args) {
+     profileDir = resolve(args[++i]);
+   }
+   const manifest = JSON.parse(await readFile(join(profileDir, 'package.json'), 'utf8'));
+-  if (!manifest.dsh?.profile) throw new Error('请通过 dsh plugin --profile web exec dsh-web-bridge setup 运行，或指定 --profile-dir。');
++  if (!manifest.dsh?.profile) throw new Error('请通过 dsh plugin --profile desktop exec dsh-web-bridge setup 运行，或指定 --profile-dir。');
+   return { profileDir, state: join(profileDir, 'web-bridge'), patch: join(profileDir, 'cordis.patch.yml') };
+ }
+ 
+ export async function setup(args = []) {
+   const ctx = await context(args);
+-  let previous = await optional(ctx.patch) ?? '';
++  const previous = await optional(ctx.patch) ?? '';
+   const hasBegin = previous.includes(begin), hasEnd = previous.includes(end);
+   if (hasBegin !== hasEnd || (hasBegin && previous.indexOf(end) < previous.indexOf(begin))) throw new Error('托管配置标记不完整，请先检查 cordis.patch.yml。');
+   const outside = hasBegin ? previous.slice(0, previous.indexOf(begin)) + previous.slice(previous.indexOf(end) + end.length) : previous;
+   if (/^\s*-\s*id:\s*['"]?deepseek-web-bridge\b/m.test(outside)) throw new Error('发现手工配置的 deepseek-web-bridge。请先备份并移除旧条目，再执行 setup，避免重复注册。');
+-  // An empty YAML array cannot be followed by an appended block sequence.
+-  if (outside.split('\n').filter(line => line.trim() && !line.trim().startsWith('#')).join('').trim() === '[]') {
+-    previous = outside.split('\n').filter(line => line.trim() !== '[]').join('\n');
+-  }
+   await mkdir(ctx.state, { recursive: true });
+   const tokenFile = join(ctx.state, 'token');
+   let token = (await optional(tokenFile))?.trim();
+@@ -51,20 +48,17 @@ export async function setup(args = []) {
+     }
+   }
+   await writeFile(join(chromeDir, 'local-config.json'), JSON.stringify({ token }, null, 2) + '\n', { mode: 0o600 });
+-  const block = [
+-    begin, '- id: deepseek-web-bridge', '  config:',
+-    '    token: ' + JSON.stringify(token),
+-    '    auditPath: ' + JSON.stringify(join(ctx.state, 'logs', 'events.jsonl').replaceAll('\\', '/')),
+-    '    port: 3081', '    timeoutMs: 600000', '    maxPromptChars: 100000', end
+-  ].join('\n');
+-  const next = hasBegin
+-    ? previous.slice(0, previous.indexOf(begin)) + block + previous.slice(previous.indexOf(end) + end.length)
+-    : previous.trimEnd() + '\n\n' + block + '\n';
+-  if (next !== previous) {
+-    if (previous) await writeFile(ctx.patch + '.web-bridge-backup-' + Date.now(), previous, { flag: 'wx', mode: 0o600 });
+-    await writeFile(ctx.patch, next, { mode: 0o600 });
++  // Pairing is read through profileContext at runtime. Do not append inline
++  // secrets or config overrides to Desktop's user patch. Migrate only the
++  // legacy setup block, leaving every unrelated patch byte unchanged.
++  if (hasBegin) {
++    const next = outside.trim() ? outside : '[]\n';
++    await writeFile(ctx.patch + '.web-bridge-backup-' + Date.now(), previous, { flag: 'wx', mode: 0o600 });
++    const temporary = ctx.patch + '.web-bridge-tmp-' + process.pid;
++    await writeFile(temporary, next, { flag: 'wx', mode: 0o600 });
++    await rename(temporary, ctx.patch);
+   }
+-  return { profileDir: ctx.profileDir, chromeDir, coreVersion: '0.2.15', chromeVersion: '0.2.19' };
++  return { profileDir: ctx.profileDir, chromeDir, coreVersion: '0.2.16-desktop.1', chromeVersion: '0.2.19' };
+ }
+ 
+ export async function doctor(args = []) {
+@@ -81,7 +75,7 @@ export async function doctor(args = []) {
+ async function main() {
+   const [command, ...args] = process.argv.slice(2);
+   if (!command || command === '--help' || command === 'help') {
+-    console.log('DSH 网页桥接 0.2.15 / Chrome 0.2.19\n\ndsh plugin --profile web exec dsh-web-bridge setup\ndsh plugin --profile web exec dsh-web-bridge doctor\n\n高级选项：--profile-dir <DSH profile 的绝对路径>\nsetup 不会更改默认模型；启动 DSH 后请选择“DeepSeek 网页”。');
++    console.log('DSH Desktop 网页桥接 0.2.16-desktop.1 / Chrome 0.2.19\n\ndsh plugin --profile desktop exec dsh-web-bridge setup\ndsh plugin --profile desktop exec dsh-web-bridge doctor\n\n高级选项：--profile-dir <DSH profile 的绝对路径>\nsetup 不会更改默认模型；启动 DSH 后请选择“DeepSeek 网页”。');
+   } else if (command === 'setup') {
+     const r = await setup(args);
+     console.log('配对文件已准备。Chrome：chrome://extensions → 开发者模式 → 加载已解压的扩展程序\n选择目录：' + r.chromeDir + '\n扩展版本：' + r.chromeVersion + '\n然后启动／重启对应 DSH 配置，在模型菜单选择“DeepSeek 网页”。');
+@@ -91,6 +85,11 @@ async function main() {
+     if (!r.connected) process.exitCode = 2;
+   } else throw new Error('未知命令：' + command);
+ }
+-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
++// pnpm may enter through a symlink; compare canonical paths, not spelling.
++function isMain() {
++  try { return !!process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); }
++  catch { return false; }
++}
++if (isMain()) {
+   main().catch(e => { console.error(e.message); process.exitCode = 1; });
+ }
+diff --git a/extension/background.js b/extension/background.js
+index 74db5f6..217a571 100644
+--- a/extension/background.js
++++ b/extension/background.js
+@@ -1,12 +1,20 @@
+ import { ensureBridgeTab, showBridgeTab, pageHealthState, accountBridgeResult } from './tabs.js';
+ const BASE = 'http://127.0.0.1:3081';
+ let pumping = false;
+-const configPromise = fetch(chrome.runtime.getURL('local-config.json')).then(r => r.json());
++const configPromise = fetch(chrome.runtime.getURL('local-config.json'))
++  .then(r => { if (!r.ok) throw new Error('Missing pairing file'); return r.json(); })
++  .then(config => {
++    if (!/^[A-Za-z0-9_-]{43}$/.test(config.token)) throw new Error('Invalid pairing file');
++    return { config };
++  })
++  .catch(() => ({ error: '缺少有效配对配置：请运行 setup，并加载其输出的 web-bridge/chrome 目录。' }));
+ let clientPromise = chrome.storage.local.get('clientId').then(async value => {
+   const clientId = value.clientId ?? crypto.randomUUID(); await chrome.storage.local.set({ clientId }); return clientId;
+ });
+ async function api(path, body) {
+-  const config = await configPromise;
++  const pairing = await configPromise;
++  if (pairing.error) throw new Error(pairing.error);
++  const config = pairing.config;
+   const response = await fetch(BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + config.token }, body: JSON.stringify({ ...body, clientId: await clientPromise }), signal: AbortSignal.timeout(8000) });
+   const result = await response.json().catch(() => ({}));
+   if (response.status === 410) return { cancelled: true };
+diff --git a/package-lock.json b/package-lock.json
+new file mode 100644
+index 0000000..8aa249d
+--- /dev/null
++++ b/package-lock.json
+@@ -0,0 +1,976 @@
++{
++  "name": "dsh-web-bridge",
++  "version": "0.2.16-desktop.1",
++  "lockfileVersion": 3,
++  "requires": true,
++  "packages": {
++    "": {
++      "name": "dsh-web-bridge",
++      "version": "0.2.16-desktop.1",
++      "dependencies": {
++        "ajv": "8.20.0"
++      },
++      "bin": {
++        "dsh-web-bridge": "bin/dsh-web-bridge.mjs"
++      },
++      "devDependencies": {
++        "@deepseek-ai/cordis": "4.1.0",
++        "@deepseek-ai/dsh-api-settings-controller": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-app-boot": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-config-editor": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-settings": "0.2.2-rc.1",
++        "@deepseek-ai/schemastery": "3.19.0",
++        "pnpm": "11.28.5"
++      },
++      "engines": {
++        "dsh": "0.2.2-rc.1",
++        "node": ">=24.9.0"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
++        "@deepseek-ai/schemastery": "~3.19.0"
++      }
++    },
++    "node_modules/@deepseek-ai/cordis": {
++      "version": "4.1.0",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/cordis/-/cordis-4.1.0.tgz",
++      "integrity": "sha512-CJrjNyBkKn1SfvBQUcgFYKFnLjS+uKrhdMsbHU60xabvi12d+xQ+IQSNlME5Z+B+4Zi6n4BDknKY94tEPeo47w==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@deepseek-ai/cosmokit": "~1.9.0",
++        "@standard-schema/spec": "^1.1.0"
++      },
++      "bin": {
++        "cordis": "bin.js"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis-plugin-include": "~1.1.0",
++        "@deepseek-ai/cordis-plugin-loader": "~1.1.0"
++      },
++      "peerDependenciesMeta": {
++        "@deepseek-ai/cordis-plugin-include": {
++          "optional": true
++        },
++        "@deepseek-ai/cordis-plugin-loader": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/@deepseek-ai/cordis-plugin-group": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/cordis-plugin-group/-/cordis-plugin-group-1.1.0.tgz",
++      "integrity": "sha512-VVGcw29YWG83D9YqYsivyfIkcPdd+tgrc/Lj4GkxS5n0i6++jpY6nNSKM/6JU7F7phUT/Q5Y9o30rcYbE1pW4w==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/cordis-plugin-loader": "~1.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/cordis-plugin-include": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/cordis-plugin-include/-/cordis-plugin-include-1.1.0.tgz",
++      "integrity": "sha512-tD5JTHTDU1j1bkjgTK150UUSzypBSVhHoEl7/vgpYiDt7Czg43++IFUKaRlwXHMl5WC51S8T2V7p2IHpJ1Ny0A==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "dependencies": {
++        "@deepseek-ai/cosmokit": "~1.9.0",
++        "js-yaml": "^4.1.0"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/cordis-plugin-loader": "~1.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/cordis-plugin-loader": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/cordis-plugin-loader/-/cordis-plugin-loader-1.1.0.tgz",
++      "integrity": "sha512-154u0LnADauDvOdQ41QtoOrRFQtvP2Ih68aYYaXzI/l7gRPwX/5MDtDDsJWeDffQA3ELn2xt3MUYsyizi+O9KA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@deepseek-ai/cosmokit": "~1.9.0",
++        "@deepseek-ai/schemastery": "~3.19.0"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "node-addon-require-builtin": "^0.1.9"
++      },
++      "peerDependenciesMeta": {
++        "node-addon-require-builtin": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/@deepseek-ai/cosmokit": {
++      "version": "1.9.0",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/cosmokit/-/cosmokit-1.9.0.tgz",
++      "integrity": "sha512-5O1S53mZiJyZYcvxxD0Qv1EY7qFPSxbGyD8CbVK6gw7W9FvcXZj2YIX1ZkOqyQQ3Xt2rFkZDHJv0+V3Zmmp8CA==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/@deepseek-ai/dsh-agent": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-agent/-/dsh-agent-0.2.2-rc.1.tgz",
++      "integrity": "sha512-3zNf9+SRLKkzItWN83OAZtG1M2TO3fPB6vi3w/Z44jiXJioz1WoZJj6qFYHwP57i+8RmMUOWP7OBPpV9m/Sqlw==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "dependencies": {
++        "@deepseek-ai/dsh-brand": "0.2.2-rc.1",
++        "zod": "4.4.3"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-scope": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-session": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-session-projection": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-system-prompt": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-util-values": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-workspace": "0.2.2-rc.1"
++      },
++      "peerDependenciesMeta": {
++        "@deepseek-ai/dsh-workspace": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-agent-preset-registry": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-agent-preset-registry/-/dsh-agent-preset-registry-0.2.2-rc.1.tgz",
++      "integrity": "sha512-ODRb9BSGJ1OPsZvYSjsVwQkIV/Cr4GxbwJmAAMagtigVgWrF7rhpbRwHKoFNXb8qTOVVMToVQGP+6UTeINonMg==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "dependencies": {
++        "@deepseek-ai/dsh-app-boot": "0.2.2-rc.1",
++        "@deepseek-ai/schemastery": "~3.19.0",
++        "js-yaml": "^4.3.2",
++        "zod": "4.4.3"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/cordis-plugin-include": "~1.1.0",
++        "@deepseek-ai/cordis-plugin-loader": "~1.1.0",
++        "@deepseek-ai/dsh-agent": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-scope": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-session": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-session-projection": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-settings": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-system-prompt": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-tools": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.1"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-agent-preset-registry/node_modules/zod": {
++      "version": "4.4.3",
++      "resolved": "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz",
++      "integrity": "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "funding": {
++        "url": "https://github.com/sponsors/colinhacks"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-agent/node_modules/zod": {
++      "version": "4.4.3",
++      "resolved": "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz",
++      "integrity": "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "funding": {
++        "url": "https://github.com/sponsors/colinhacks"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-api-settings-controller": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-api-settings-controller/-/dsh-api-settings-controller-0.2.2-rc.1.tgz",
++      "integrity": "sha512-AQ6dw6IkHAF2ObpS36e/m7ogoQHuYBcHegb0xZ7oHvovno80pvsOJD23iypN6wkPRmRxm/x/WTtbzKgjddtX5A==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@deepseek-ai/schemastery": "~3.19.0",
++        "zod": "4.4.3"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/dsh-agent-preset-registry": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-credentials": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-native-command": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-session": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-settings": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.1"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-api-settings-controller/node_modules/zod": {
++      "version": "4.4.3",
++      "resolved": "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz",
++      "integrity": "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==",
++      "dev": true,
++      "license": "MIT",
++      "funding": {
++        "url": "https://github.com/sponsors/colinhacks"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-app-boot": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-app-boot/-/dsh-app-boot-0.2.2-rc.1.tgz",
++      "integrity": "sha512-eDGdx7SySAOtj7IFZtU/DVMXkfI+6skNeVTtujURtZUEA0ZNaOmUbwT+z4EsFjkg5x5o8PRwtnsDg+GKk+nn4Q==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@deepseek-ai/dsh-atomic-write": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-official-bundles": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-package-manifest": "0.2.2-rc.1",
++        "@eslint-community/regexpp": "^4.12.2",
++        "ajv": "^8.20.0",
++        "js-yaml": "^4.3.2",
++        "node-addon-require-builtin": "^0.1.9",
++        "resolve.exports": "^2.0.3",
++        "semver": "^7.8.5"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/cordis-plugin-group": "~1.1.0",
++        "@deepseek-ai/cordis-plugin-include": "~1.1.0",
++        "@deepseek-ai/cordis-plugin-loader": "~1.1.0",
++        "@deepseek-ai/dsh-home-paths": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-launch-environment": "0.2.2-rc.1"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-atomic-write": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-atomic-write/-/dsh-atomic-write-0.2.2-rc.1.tgz",
++      "integrity": "sha512-P9Ys/iN0WL6th9jB2uOsiEXaR3Kb/oVbiI42VPFa+AxtIhj4vYF6Tx8MvvRSxzDDxNWPrR1dsAuhxtI2pT+MVQ==",
++      "dev": true,
++      "license": "MIT",
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-brand": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-brand/-/dsh-brand-0.2.2-rc.1.tgz",
++      "integrity": "sha512-ShGNEmNuEQA+bfkspWC2kGrdbrM4dFNhqlrNHIWsHO+PgVH1KoTKTLSraT1pt0A8YYk/moKE0gL2gY9dNBU+rw==",
++      "dev": true,
++      "license": "MIT",
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-config-editor": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-config-editor/-/dsh-config-editor-0.2.2-rc.1.tgz",
++      "integrity": "sha512-RDuZgYqq7GtGSzlGgVvLS7ScLhkyvevWoyZaPywnEYDGgiar/EGbozJ+2LvzlSeNqDg9cJOkXu0fEuRQTmOmuA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@deepseek-ai/dsh-atomic-write": "0.2.2-rc.1",
++        "js-yaml": "^4.3.2",
++        "yaml": "^2.8.1"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/cordis-plugin-include": "~1.1.0",
++        "@deepseek-ai/cordis-plugin-loader": "~1.1.0",
++        "@deepseek-ai/dsh-app-boot": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-hmr": "0.2.2-rc.1"
++      },
++      "peerDependenciesMeta": {
++        "@deepseek-ai/dsh-hmr": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-credentials": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-credentials/-/dsh-credentials-0.2.2-rc.1.tgz",
++      "integrity": "sha512-yo6G/wjwFhykAFXJhRdxh+LosWoq5ULYf+zFG9Wreyf6oDQHGP+OHk13+XboNWBkqsUhz/LdWNRwuwFjc/1xwg==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "dependencies": {
++        "@deepseek-ai/dsh-brand": "0.2.2-rc.1"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-home-paths": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-home-paths/-/dsh-home-paths-0.2.2-rc.1.tgz",
++      "integrity": "sha512-aSmGSng1Esg6RWkJtskFAU600qDmazzuto/QT0f2Tf3+qDS4yDTM68/YeWn/Jc5JxwvTJTc17njKCyRSXJhTrw==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-launch-environment": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-launch-environment/-/dsh-launch-environment-0.2.2-rc.1.tgz",
++      "integrity": "sha512-LntAXt+qEUXnGsbUAs/2VAGcEf368ONvySagv/88amGkv+o0vYumZNX8JiAP+bxtVwnbspBg3jGlvdLyYPft8w==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-llm": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-llm/-/dsh-llm-0.2.2-rc.1.tgz",
++      "integrity": "sha512-XeEvH+6bpkjx0E2P1B5ZE+WWa+VHp4DimQaJDKNUZEFouqHMuN1B61TIz6IzUquRxa/6X4yJy+qXQ9WwAeMw5w==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@deepseek-ai/dsh-brand": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-timeout": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-util-crypto": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-util-values": "0.2.2-rc.1",
++        "@deepseek-ai/schemastery": "~3.19.0",
++        "zod": "4.4.3"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-llm/node_modules/zod": {
++      "version": "4.4.3",
++      "resolved": "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz",
++      "integrity": "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==",
++      "dev": true,
++      "license": "MIT",
++      "funding": {
++        "url": "https://github.com/sponsors/colinhacks"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-native-command": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-native-command/-/dsh-native-command-0.2.2-rc.1.tgz",
++      "integrity": "sha512-/YZqJeZyd0omawJiXWZNn9ZECRdxWV4FOMPhoRQNxKlKvZwg7DZO6eRjzuRUogvbA9HlFFL7uJQgPA+OZf4C/Q==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-official-bundles": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-official-bundles/-/dsh-official-bundles-0.2.2-rc.1.tgz",
++      "integrity": "sha512-A9+tzsoc8V57HAblw7d6T6QDglSxSHUk/3fJGTnOnv4fI8VgQ4WpoK0J+uiBIA2KAPLOtj/x8itVfvxzyhz3fg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@deepseek-ai/dsh-package-manifest": "0.2.2-rc.1"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-package-manifest": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-package-manifest/-/dsh-package-manifest-0.2.2-rc.1.tgz",
++      "integrity": "sha512-/Dz9+N+iMLu4QaXC28Miy1ClgZpHcWEq+B7+BQVwekdWwEPyFrPPjcl6slTXtq2ZlhOh/lNhXousZzyg7TsyKA==",
++      "dev": true,
++      "license": "MIT",
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-scope": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-scope/-/dsh-scope-0.2.2-rc.1.tgz",
++      "integrity": "sha512-FOJbXYvrskIcrb/4eVMMQfp0kaReTSBtIry2KsGNURb0OJfelqeSKaB1MsQQq/sOxbt3nPJIN9HY00SwmrTk3Q==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-session": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-session/-/dsh-session-0.2.2-rc.1.tgz",
++      "integrity": "sha512-e0zx9HFNn8EyqrymGQS85SjKOyr61//ChTgIVDlCBSZvBB723fuXyi9LiHIIuPTlkgmWJl3gm5J51ebEXew7PQ==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "dependencies": {
++        "@deepseek-ai/dsh-brand": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-util-values": "0.2.2-rc.1"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/dsh-scope": "0.2.2-rc.1"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-session-projection": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-session-projection/-/dsh-session-projection-0.2.2-rc.1.tgz",
++      "integrity": "sha512-+wGhr1kVdhYv7E355HJUCq+foG1Dt40ehGULCdCxT46we6S1Ie2d1yUH18VvVCsEw0eM1ATe241mx3UCUMDYWQ==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "dependencies": {
++        "zod": "4.4.3"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/dsh-session": "0.2.2-rc.1"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-session-projection/node_modules/zod": {
++      "version": "4.4.3",
++      "resolved": "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz",
++      "integrity": "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "funding": {
++        "url": "https://github.com/sponsors/colinhacks"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-settings": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-settings/-/dsh-settings-0.2.2-rc.1.tgz",
++      "integrity": "sha512-Wyec4ea7GeZjN/ktXXzm0BO1Im3e1e0Rsq5cYGDkN6cZfLZLz40BeHSw3Erg7Rrangl14ZW5FuZ4s5gvlSlSLA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@deepseek-ai/cordis-plugin-loader": "~1.1.0",
++        "@deepseek-ai/cosmokit": "~1.9.0",
++        "@deepseek-ai/dsh-config-editor": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-util-values": "0.2.2-rc.1",
++        "yaml": "^2.8.1"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/dsh-brand": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-session": "0.2.2-rc.1",
++        "@deepseek-ai/schemastery": "~3.19.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-system-prompt": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-system-prompt/-/dsh-system-prompt-0.2.2-rc.1.tgz",
++      "integrity": "sha512-1p9imdrenPnJTkLb6Coq+ELBDjngblM/YGP1Pa/xf1oisjLHcCoK2n9kkOUTIfgvoFtqWfxZJNZeKef71ZmlrA==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "dependencies": {
++        "@deepseek-ai/schemastery": "~3.19.0"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-scope": "0.2.2-rc.1"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-timeout": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-timeout/-/dsh-timeout-0.2.2-rc.1.tgz",
++      "integrity": "sha512-dn5eQbPjdQIH2WrVXyQjxgsxkB006+O8OhclMQZtIZnUjWaqxtBmot0wSdyrPxrULyXxiHmmdRCeLruZBO0n0Q==",
++      "dev": true,
++      "license": "MIT",
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-tools": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-tools/-/dsh-tools-0.2.2-rc.1.tgz",
++      "integrity": "sha512-svB49dLPCHkKHgGwik3dTvEH0sL1vKwIzlQgqjE4qzEqFbSEROW8fByk3g2y2lxDv8TqgEUa0Vp2qFrVbm2lfw==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "dependencies": {
++        "@deepseek-ai/dsh-brand": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-util-values": "0.2.2-rc.1",
++        "@deepseek-ai/schemastery": "~3.19.0"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/dsh-agent": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-scope": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-session": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-system-prompt": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-user-approval": "0.2.2-rc.1"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-typert-protocol": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-typert-protocol/-/dsh-typert-protocol-0.2.2-rc.1.tgz",
++      "integrity": "sha512-TrasPUFkoUafa9gAALMRYy2skAiM1nQ9qmmbgWF8FyHyIQsMTK4BTW8g4JcRnS0+y9YTIk2OytRT2ps9NGzI9A==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@deepseek-ai/dsh-brand": "0.2.2-rc.1",
++        "zod": "^4.4.3"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-user-approval": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-user-approval/-/dsh-user-approval-0.2.2-rc.1.tgz",
++      "integrity": "sha512-zH3TXxkzwIxIlHZfqqjv/lzDr/kOGkKk3BHPEwkyRyaJNi+dx68LiMgmzylYBVziHgqyGtYcYmbOutGCzJoCUA==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "dependencies": {
++        "@deepseek-ai/schemastery": "~3.19.0",
++        "zod": "4.4.3"
++      },
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0",
++        "@deepseek-ai/dsh-agent": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-brand": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-scope": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-session": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-session-projection": "0.2.2-rc.1",
++        "@deepseek-ai/dsh-system-prompt": "0.2.2-rc.1"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-user-approval/node_modules/zod": {
++      "version": "4.4.3",
++      "resolved": "https://registry.npmjs.org/zod/-/zod-4.4.3.tgz",
++      "integrity": "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "funding": {
++        "url": "https://github.com/sponsors/colinhacks"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-util-crypto": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-util-crypto/-/dsh-util-crypto-0.2.2-rc.1.tgz",
++      "integrity": "sha512-I9Nhh3/64HPzjdR/mUt0J534FYHgodMUe0coXtA91+kxGcJQcSHOYouewv4hf0NWw0BuLh5zihTdtldZtobOWA==",
++      "dev": true,
++      "license": "MIT",
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/dsh-util-values": {
++      "version": "0.2.2-rc.1",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/dsh-util-values/-/dsh-util-values-0.2.2-rc.1.tgz",
++      "integrity": "sha512-UN4B/Fa9zAunYN3UuXDQ3QknxF/lMKNwTu2WxXKKEC+Ejz745po7I/JmsVFVa7+socfuwwTmVrfSsddRVU+lew==",
++      "dev": true,
++      "license": "MIT",
++      "peerDependencies": {
++        "@deepseek-ai/cordis": "~4.1.0"
++      }
++    },
++    "node_modules/@deepseek-ai/schemastery": {
++      "version": "3.19.0",
++      "resolved": "https://registry.npmjs.org/@deepseek-ai/schemastery/-/schemastery-3.19.0.tgz",
++      "integrity": "sha512-bDXoYQa7ghAhmdYD5VPlzKxEzJV/aKkz5l4V5h1u06z8GAPN1ROewSjvR9WiXhpa52E9fng8lpH5QdCRIQgnyQ==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@deepseek-ai/cosmokit": "~1.9.0",
++        "@standard-schema/spec": "^1.1.0"
++      }
++    },
++    "node_modules/@eslint-community/regexpp": {
++      "version": "4.12.3",
++      "resolved": "https://registry.npmjs.org/@eslint-community/regexpp/-/regexpp-4.12.3.tgz",
++      "integrity": "sha512-R76UKbvsqI68DJJVTVyqFKqU98CN4+B+acxNfEA2IFarSzP0SjtKf/3+fFiXzTyv5Fj3PxLkGHe2wnVWWMxobQ==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": "^12.0.0 || ^14.0.0 || >=16.0.0"
++      }
++    },
++    "node_modules/@standard-schema/spec": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/@standard-schema/spec/-/spec-1.1.0.tgz",
++      "integrity": "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/ajv": {
++      "version": "8.20.0",
++      "resolved": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
++      "integrity": "sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==",
++      "license": "MIT",
++      "dependencies": {
++        "fast-deep-equal": "^3.1.3",
++        "fast-uri": "^3.0.1",
++        "json-schema-traverse": "^1.0.0",
++        "require-from-string": "^2.0.2"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/epoberezkin"
++      }
++    },
++    "node_modules/argparse": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
++      "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
++      "dev": true,
++      "license": "Python-2.0"
++    },
++    "node_modules/fast-deep-equal": {
++      "version": "3.1.3",
++      "resolved": "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz",
++      "integrity": "sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==",
++      "license": "MIT"
++    },
++    "node_modules/fast-uri": {
++      "version": "3.1.9",
++      "resolved": "https://registry.npmjs.org/fast-uri/-/fast-uri-3.1.9.tgz",
++      "integrity": "sha512-hS/0Wt3Ya043oKXs0sIxrMpKQITXhMLIrVAKKXi4gozGC9v7YRWVnXIZzjNPTO02M9BdxLCWqK1yRXgNziVyJQ==",
++      "funding": [
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/fastify"
++        },
++        {
++          "type": "opencollective",
++          "url": "https://opencollective.com/fastify"
++        }
++      ],
++      "license": "BSD-3-Clause"
++    },
++    "node_modules/js-yaml": {
++      "version": "4.3.2",
++      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-4.3.2.tgz",
++      "integrity": "sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==",
++      "dev": true,
++      "funding": [
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/puzrin"
++        },
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/nodeca"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "argparse": "^2.0.1"
++      },
++      "bin": {
++        "js-yaml": "bin/js-yaml.js"
++      }
++    },
++    "node_modules/json-schema-traverse": {
++      "version": "1.0.0",
++      "resolved": "https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-1.0.0.tgz",
++      "integrity": "sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==",
++      "license": "MIT"
++    },
++    "node_modules/node-addon-native-custom-loader": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-native-custom-loader/-/node-addon-native-custom-loader-0.1.9.tgz",
++      "integrity": "sha512-Zh87aubSc1UF8CzZsRws1KtSwXiPDH0tbcg8V/2OA8Tcq9yGJRESFcEOC5NGLFama5IGfC3aJhubZbrj9Un2qA==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/node-addon-require-builtin": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-require-builtin/-/node-addon-require-builtin-0.1.9.tgz",
++      "integrity": "sha512-BCxXCMZDs/VLLh64SwKNw/me7Qx1I7Be4qxWwYVRRm8tJoOB8fL7qg6CmXhSXeUqsKt72t8RaKCX4EN+5nocVg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "node-addon-native-custom-loader": "0.1.9"
++      },
++      "engines": {
++        "node": ">=20"
++      },
++      "optionalDependencies": {
++        "node-addon-require-builtin-darwin-arm64": "0.1.9",
++        "node-addon-require-builtin-darwin-x64": "0.1.9",
++        "node-addon-require-builtin-linux-arm64-gnu": "0.1.9",
++        "node-addon-require-builtin-linux-arm64-musl": "0.1.9",
++        "node-addon-require-builtin-linux-x64-gnu": "0.1.9",
++        "node-addon-require-builtin-linux-x64-musl": "0.1.9",
++        "node-addon-require-builtin-win32-arm64-msvc": "0.1.9",
++        "node-addon-require-builtin-win32-ia32-msvc": "0.1.9",
++        "node-addon-require-builtin-win32-x64-msvc": "0.1.9"
++      }
++    },
++    "node_modules/node-addon-require-builtin-darwin-arm64": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-require-builtin-darwin-arm64/-/node-addon-require-builtin-darwin-arm64-0.1.9.tgz",
++      "integrity": "sha512-n45xEILQVOLZ2hVhzRXesTMYS4odHquyI/B/IkPMPUCONa8PjNfBag6lYBH4wDrhgpLNNBwMsUD8d8O/13QPPA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "dependencies": {
++        "node-addon-native-custom-loader": "0.1.9"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/node-addon-require-builtin-darwin-x64": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-require-builtin-darwin-x64/-/node-addon-require-builtin-darwin-x64-0.1.9.tgz",
++      "integrity": "sha512-Sm4Liqh1uo9zgJB2F/pACPPZdHu+fj9Qniyr1Q99dDQB0v71VgZgkAgv3K0/E1iPQBlZq9rakFkY7MGUIfWc0A==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "dependencies": {
++        "node-addon-native-custom-loader": "0.1.9"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/node-addon-require-builtin-linux-arm64-gnu": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-require-builtin-linux-arm64-gnu/-/node-addon-require-builtin-linux-arm64-gnu-0.1.9.tgz",
++      "integrity": "sha512-ToU4wGtOD/069i2y4fJ3cjDJiiWtcjSQTZMf0YKlotb5BmTM7FjhR3X1aub8J/YjlOwl6665J/XAYuvCaDO5sA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "dependencies": {
++        "node-addon-native-custom-loader": "0.1.9"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/node-addon-require-builtin-linux-arm64-musl": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-require-builtin-linux-arm64-musl/-/node-addon-require-builtin-linux-arm64-musl-0.1.9.tgz",
++      "integrity": "sha512-85Z5Avp++wfa9iiTIH8LC/r6qvlC/CiwpifiwIz0gYQ9PzajTSkz06gX7YDqf1oUqWYxU9uwNEOmo7mktHOOfA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "dependencies": {
++        "node-addon-native-custom-loader": "0.1.9"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/node-addon-require-builtin-linux-x64-gnu": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-require-builtin-linux-x64-gnu/-/node-addon-require-builtin-linux-x64-gnu-0.1.9.tgz",
++      "integrity": "sha512-fh3K3/JvBfSYwU8vEOpp4Wdp4N/jX0EnZYq5GsaftlQin1FVqgve/yDNoh+asxBMOQyHOG8F4dXlV1WCierrfg==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "dependencies": {
++        "node-addon-native-custom-loader": "0.1.9"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/node-addon-require-builtin-linux-x64-musl": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-require-builtin-linux-x64-musl/-/node-addon-require-builtin-linux-x64-musl-0.1.9.tgz",
++      "integrity": "sha512-B6fu/5xmbRxnifM7nWz0IESkYnUl8dwFZmRDMsxdhzv2nb+EtBRFAXg4lf73qhX3yoZD4SnWJILBQMlIAwBCzw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "dependencies": {
++        "node-addon-native-custom-loader": "0.1.9"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/node-addon-require-builtin-win32-arm64-msvc": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-require-builtin-win32-arm64-msvc/-/node-addon-require-builtin-win32-arm64-msvc-0.1.9.tgz",
++      "integrity": "sha512-FOQuzNe8B1BANu886rJgdbQuRxPGUQmewkykw87wSr32U0ibQ3AWGuUM/Gh7LG4RekjFaifj7gEI/tq2+6GU6g==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "dependencies": {
++        "node-addon-native-custom-loader": "0.1.9"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/node-addon-require-builtin-win32-ia32-msvc": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-require-builtin-win32-ia32-msvc/-/node-addon-require-builtin-win32-ia32-msvc-0.1.9.tgz",
++      "integrity": "sha512-N29P0kmIBT6hnkNNFYzxn+o9ydT6OYZe9RFAi8dSxV1rNSul1FlxtuKWYe8w2sQpbQGYuGDEtpOwdeFtq2iFTg==",
++      "cpu": [
++        "ia32"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "dependencies": {
++        "node-addon-native-custom-loader": "0.1.9"
++      },
++      "engines": {
++        "node": ">=20 <23"
++      }
++    },
++    "node_modules/node-addon-require-builtin-win32-x64-msvc": {
++      "version": "0.1.9",
++      "resolved": "https://registry.npmjs.org/node-addon-require-builtin-win32-x64-msvc/-/node-addon-require-builtin-win32-x64-msvc-0.1.9.tgz",
++      "integrity": "sha512-+i6N4A7m7txjbw8pDYESdWXiKO9EEVq0SzTzwPS0WZuV4F1MzQnaDJwJJnO7T6zAc0BvqHXBOkpharCrUjFhbQ==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "dependencies": {
++        "node-addon-native-custom-loader": "0.1.9"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/pnpm": {
++      "version": "11.28.5",
++      "resolved": "https://registry.npmjs.org/pnpm/-/pnpm-11.28.5.tgz",
++      "integrity": "sha512-SEVj0wtMKtJ8tIqpT/KzAtvOvI/2vyiBbCWJiG4UbOf3bzVPO8GkOOb16XaMMCqgpvet2CMpA81M+BQmy8FNng==",
++      "dev": true,
++      "license": "MIT",
++      "bin": {
++        "pn": "bin/pnpm.mjs",
++        "pnpm": "bin/pnpm.mjs",
++        "pnpx": "bin/pnpx.mjs",
++        "pnx": "bin/pnpx.mjs"
++      },
++      "engines": {
++        "node": ">=22.13"
++      },
++      "funding": {
++        "url": "https://opencollective.com/pnpm"
++      }
++    },
++    "node_modules/require-from-string": {
++      "version": "2.0.2",
++      "resolved": "https://registry.npmjs.org/require-from-string/-/require-from-string-2.0.2.tgz",
++      "integrity": "sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/resolve.exports": {
++      "version": "2.0.4",
++      "resolved": "https://registry.npmjs.org/resolve.exports/-/resolve.exports-2.0.4.tgz",
++      "integrity": "sha512-zepuGL0ulf+nt+XaFrlKeaiTJeyPFPLLY62+ncq1/VTHBdt3HsfXOH60priZ6tnXQozdGcDeIF5JVTanvIcYWQ==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=10"
++      }
++    },
++    "node_modules/semver": {
++      "version": "7.8.6",
++      "resolved": "https://registry.npmjs.org/semver/-/semver-7.8.6.tgz",
++      "integrity": "sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==",
++      "dev": true,
++      "license": "ISC",
++      "bin": {
++        "semver": "bin/semver.js"
++      },
++      "engines": {
++        "node": ">=10"
++      }
++    },
++    "node_modules/yaml": {
++      "version": "2.9.1",
++      "resolved": "https://registry.npmjs.org/yaml/-/yaml-2.9.1.tgz",
++      "integrity": "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==",
++      "dev": true,
++      "license": "ISC",
++      "bin": {
++        "yaml": "bin.mjs"
++      },
++      "engines": {
++        "node": ">= 14.6"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/eemeli"
++      }
++    },
++    "node_modules/zod": {
++      "version": "4.6.7",
++      "resolved": "https://registry.npmjs.org/zod/-/zod-4.6.7.tgz",
++      "integrity": "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==",
++      "dev": true,
++      "license": "MIT",
++      "funding": {
++        "url": "https://github.com/sponsors/colinhacks"
++      }
++    }
++  }
++}
+diff --git a/package.json b/package.json
+index 41d48eb..342ecd9 100644
+--- a/package.json
++++ b/package.json
+@@ -1,14 +1,15 @@
+ {
+   "name": "dsh-web-bridge",
+-  "version": "0.2.15",
+-  "description": "DeepSeek Harness browser bridge — stable source 82440ec",
++  "version": "0.2.16-desktop.1",
++  "description": "DeepSeek Harness Desktop 0.2.2-rc.1 browser bridge",
+   "type": "module",
+   "main": "./plugins/dsh-web-bridge/index.js",
+   "exports": {
+     ".": "./plugins/dsh-web-bridge/index.js",
+     "./package.json": "./package.json",
+     "./client": "./plugins/dsh-web-bridge/client.js",
+-    "./cordis.patch.yml": "./plugins/dsh-web-bridge/cordis.patch.yml"
++    "./cordis.patch.yml": "./plugins/dsh-web-bridge/cordis.patch.yml",
++    "./setup": "./bin/dsh-web-bridge.mjs"
+   },
+   "bin": {
+     "dsh-web-bridge": "./bin/dsh-web-bridge.mjs"
+@@ -22,14 +23,19 @@
+     "bin/",
+     "README.md",
+     "SOURCE.json",
+-    "VERIFICATION.md"
++    "VERIFICATION.md",
++    "DESKTOP.md",
++    "ADAPTATION.json",
++    "scripts/install-desktop.mjs",
++    "scripts/rollback-desktop.mjs"
+   ],
+   "engines": {
+-    "node": ">=24"
++    "node": ">=24.9.0",
++    "dsh": "0.2.2-rc.1"
+   },
+   "repository": {
+     "type": "git",
+-    "url": "git+https://github.com/xinyuquan985-coder/DSH-webtokens.git"
++    "url": "git+https://github.com/colin4k/DSH-webtokens.git"
+   },
+   "dsh": {
+     "bundle": {
+@@ -44,15 +50,25 @@
+     }
+   },
+   "dependencies": {
+-    "@deepseek-ai/dsh-llm": "0.1.5-rc.2",
+-    "@deepseek-ai/schemastery": "3.18.2",
+     "ajv": "8.20.0"
+   },
+   "peerDependencies": {
+-    "@deepseek-ai/cordis": "^4.0.2"
++    "@deepseek-ai/cordis": "~4.1.0",
++    "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
++    "@deepseek-ai/schemastery": "~3.19.0"
+   },
+   "scripts": {
+     "test": "node --test tests/*.test.mjs",
+     "verify:source": "node scripts/verify-source.mjs"
++  },
++  "devDependencies": {
++    "@deepseek-ai/cordis": "4.1.0",
++    "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
++    "@deepseek-ai/schemastery": "3.19.0",
++    "@deepseek-ai/dsh-app-boot": "0.2.2-rc.1",
++    "@deepseek-ai/dsh-settings": "0.2.2-rc.1",
++    "@deepseek-ai/dsh-config-editor": "0.2.2-rc.1",
++    "@deepseek-ai/dsh-api-settings-controller": "0.2.2-rc.1",
++    "pnpm": "11.28.5"
+   }
+ }
+diff --git a/plugins/dsh-web-bridge/cordis.patch.yml b/plugins/dsh-web-bridge/cordis.patch.yml
+index d904ce2..b8af30b 100644
+--- a/plugins/dsh-web-bridge/cordis.patch.yml
++++ b/plugins/dsh-web-bridge/cordis.patch.yml
+@@ -2,6 +2,4 @@
+     - id: deepseek-web-bridge
+       name: dsh-web-bridge
+       config:
+-        token: !!js process.env.DSH_WEB_BRIDGE_TOKEN
+-        auditPath: !!js process.env.DSH_WEB_BRIDGE_AUDIT
+         port: 3081
+diff --git a/plugins/dsh-web-bridge/index.js b/plugins/dsh-web-bridge/index.js
+index bbac482..6652046 100644
+--- a/plugins/dsh-web-bridge/index.js
++++ b/plugins/dsh-web-bridge/index.js
+@@ -1,6 +1,7 @@
+ import z from '@deepseek-ai/schemastery';
+ import { LlmAdapter, LlmError, resolveRetryPolicy } from '@deepseek-ai/dsh-llm';
+-import { appendFile } from 'node:fs/promises';
++import { appendFile, readFile, mkdir } from 'node:fs/promises';
++import { join, dirname } from 'node:path';
+ import { Broker } from './broker.js';
+ import { parseReply, replyChunks, replyMetadata, OFFICIAL_CONTEXT_TOKENS } from './protocol.js';
+ import { ContextContinuation } from './context.js';
+@@ -11,7 +12,7 @@ import { restoreLastPanel } from './history.js';
+ 
+ export const name = 'deepseek-web-bridge';
+ export const inject = ['llm'];
+-export const Config = z.object({ token: z.string(), port: z.number().default(3081), timeoutMs: z.number().default(600000), auditPath: z.string(), remote: z.boolean().default(false), maxPromptChars: z.number().default(100000) });
++export const Config = z.object({ token: z.string().role('secret').default(''), port: z.number().min(1).max(65535).default(3081), timeoutMs: z.number().default(600000), auditPath: z.string().default(''), remote: z.boolean().default(false), maxPromptChars: z.number().default(100000) });
+ export class WebAdapter extends LlmAdapter {
+   constructor(broker, config = {}) { super(); this.broker = broker; this.context = new ContextContinuation(config); }
+   providerInfo(provider) { return { id: provider, name: 'DeepSeek 网页 · 无 API' }; }
+@@ -59,14 +60,37 @@ export class WebAdapter extends LlmAdapter {
+   }
+ }
+ export async function apply(ctx, config) {
++  // Desktop and Web both own a profileContext. Read pairing state from that
++  // profile, never the application's current working directory or ASAR tree.
++  const stateDir = ctx.get('profileContext')?.dir;
++  config = { ...config };
++  if (!config.token && stateDir) {
++    try { config.token = (await readFile(join(stateDir, 'web-bridge', 'token'), 'utf8')).trim(); }
++    catch (error) {
++      if (error.code !== 'ENOENT') { ctx.logger.warn('网页桥接无法读取配对文件（%s），请重新 setup。', error.code ?? 'IO_ERROR'); return; }
++    }
++  }
++  if (!/^[A-Za-z0-9_-]{43}$/.test(config.token)) {
++    ctx.logger.warn('网页桥接尚未配对：退出应用后执行 dsh-web-bridge setup，再重启。');
++    return;
++  }
++  config.auditPath ||= stateDir ? join(stateDir, 'web-bridge', 'logs', 'events.jsonl') : '';
+   if (config.remote) {
+     const remote = { submit: (request, signal, onProgress) => submitRemote(config, request, signal, onProgress) };
+     ctx.llm.registerAdapter(['deepseek-web'], new WebAdapter(remote, config));
+     return;
+   }
++  if (config.auditPath) await mkdir(dirname(config.auditPath), { recursive: true });
+   const broker = new Broker({ ...config, onEvent: event => { if (config.auditPath) appendFile(config.auditPath, JSON.stringify(event) + '\n').catch(() => {}); } });
+   broker.lastPanel = await restoreLastPanel(config.auditPath);
++  // A missing pair or an occupied bridge port must not take Desktop down.
++  try { await broker.start(); }
++  catch (error) {
++    await broker.close();
++    ctx.logger.warn('网页桥接未启动（%s），请检查本机端口 %s。', error.code ?? 'START_FAILED', config.port);
++    return;
++  }
++  ctx.effect(() => () => broker.close(), 'deepseek-web: local broker');
+   ctx.inject(['connection', 'webServer'], scope => registerPanel(scope, broker));
+-  await ctx.effect(async () => { await broker.start(); return () => broker.close(); }, 'deepseek-web: local broker');
+   ctx.llm.registerAdapter(['deepseek-web'], new WebAdapter(broker, config));
+ }
+diff --git a/plugins/dsh-web-bridge/package.json b/plugins/dsh-web-bridge/package.json
+index 85f2880..f65435e 100644
+--- a/plugins/dsh-web-bridge/package.json
++++ b/plugins/dsh-web-bridge/package.json
+@@ -1,18 +1,37 @@
+ {
+   "name": "dsh-web-bridge",
+-  "version": "0.2.15",
++  "version": "0.2.16-desktop.1",
+   "private": true,
+   "type": "module",
+   "main": "index.js",
+-  "exports": { ".": "./index.js", "./package.json": "./package.json", "./client": "./client.js", "./cordis.patch.yml": "./cordis.patch.yml" },
++  "exports": {
++    ".": "./index.js",
++    "./package.json": "./package.json",
++    "./client": "./client.js",
++    "./cordis.patch.yml": "./cordis.patch.yml"
++  },
+   "dsh": {
+-    "bundle": { "patch": "./cordis.patch.yml" },
+-    "client": { "inject": ["@deepseek-ai/dsh-client-ui-sidebar", "@deepseek-ai/dsh-client-ui-renderer"], "platform": "web" }
++    "bundle": {
++      "patch": "./cordis.patch.yml"
++    },
++    "client": {
++      "inject": [
++        "@deepseek-ai/dsh-client-ui-sidebar",
++        "@deepseek-ai/dsh-client-ui-renderer"
++      ],
++      "platform": "web"
++    }
+   },
+   "dependencies": {
+-    "@deepseek-ai/dsh-llm": "0.1.5-rc.2",
+-    "@deepseek-ai/schemastery": "3.18.2",
+     "ajv": "8.20.0"
+   },
+-  "peerDependencies": { "@deepseek-ai/cordis": "^4.0.2" }
++  "peerDependencies": {
++    "@deepseek-ai/cordis": "~4.1.0",
++    "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
++    "@deepseek-ai/schemastery": "~3.19.0"
++  },
++  "engines": {
++    "node": ">=24.9.0",
++    "dsh": "0.2.2-rc.1"
++  }
+ }
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 70858dc..0cf25b5 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -1,75 +1,160 @@
+ lockfileVersion: '9.0'
+ 
+ settings:
+-  autoInstallPeers: true
++  autoInstallPeers: false
+   excludeLinksFromLockfile: false
+ 
+ importers:
+ 
+   .:
+     dependencies:
+-      '@deepseek-ai/cordis':
+-        specifier: ^4.0.2
+-        version: 4.0.2
+-      '@deepseek-ai/dsh-llm':
+-        specifier: 0.1.5-rc.2
+-        version: 0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)
+-      '@deepseek-ai/schemastery':
+-        specifier: 3.18.2
+-        version: 3.18.2
+       ajv:
+         specifier: 8.20.0
+         version: 8.20.0
++    devDependencies:
++      '@deepseek-ai/cordis':
++        specifier: 4.1.0
++        version: 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++      '@deepseek-ai/dsh-api-settings-controller':
++        specifier: 0.2.2-rc.1
++        version: 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)(@deepseek-ai/dsh-settings@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)(@deepseek-ai/dsh-app-boot@0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0))(@deepseek-ai/dsh-brand@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0))(@deepseek-ai/schemastery@3.19.0)(node-addon-require-builtin@0.1.9))(@deepseek-ai/dsh-typert-protocol@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0))
++      '@deepseek-ai/dsh-app-boot':
++        specifier: 0.2.2-rc.1
++        version: 0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/dsh-config-editor':
++        specifier: 0.2.2-rc.1
++        version: 0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0)(@deepseek-ai/dsh-app-boot@0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0))
++      '@deepseek-ai/dsh-llm':
++        specifier: 0.2.2-rc.1
++        version: 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/dsh-settings':
++        specifier: 0.2.2-rc.1
++        version: 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)(@deepseek-ai/dsh-app-boot@0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0))(@deepseek-ai/dsh-brand@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0))(@deepseek-ai/schemastery@3.19.0)(node-addon-require-builtin@0.1.9)
++      '@deepseek-ai/schemastery':
++        specifier: 3.19.0
++        version: 3.19.0
++      pnpm:
++        specifier: 11.28.5
++        version: 11.28.5
+ 
+ packages:
+ 
+-  '@deepseek-ai/cordis@4.0.2':
+-    resolution: {integrity: sha512-asOnXP1TzFSFQlHb1iegDZp0z/8WD1c7YNrwJR/Tx2bzNuMXfcekE/I67Iv6SQXeLB4csxqCngzQKANP7gdw0g==}
++  '@deepseek-ai/cordis-plugin-loader@1.1.0':
++    resolution: {integrity: sha512-154u0LnADauDvOdQ41QtoOrRFQtvP2Ih68aYYaXzI/l7gRPwX/5MDtDDsJWeDffQA3ELn2xt3MUYsyizi+O9KA==}
++    peerDependencies:
++      '@deepseek-ai/cordis': ~4.1.0
++      node-addon-require-builtin: ^0.1.9
++    peerDependenciesMeta:
++      node-addon-require-builtin:
++        optional: true
++
++  '@deepseek-ai/cordis@4.1.0':
++    resolution: {integrity: sha512-CJrjNyBkKn1SfvBQUcgFYKFnLjS+uKrhdMsbHU60xabvi12d+xQ+IQSNlME5Z+B+4Zi6n4BDknKY94tEPeo47w==}
+     hasBin: true
+     peerDependencies:
+-      '@deepseek-ai/cordis-plugin-include': ^1.0.7
+-      '@deepseek-ai/cordis-plugin-loader': ^1.0.3
++      '@deepseek-ai/cordis-plugin-include': ~1.1.0
++      '@deepseek-ai/cordis-plugin-loader': ~1.1.0
+     peerDependenciesMeta:
+       '@deepseek-ai/cordis-plugin-include':
+         optional: true
+       '@deepseek-ai/cordis-plugin-loader':
+         optional: true
+ 
+-  '@deepseek-ai/cosmokit@1.8.3':
+-    resolution: {integrity: sha512-qBo+ronVM6Eu2WNVJXi8JcMiqZ19T9BRIpV+5qJUFPXjGH/Z0QKcQMC/IZJ7L394YTOtJgcovbk9qP0w2GsBXQ==}
++  '@deepseek-ai/cosmokit@1.9.0':
++    resolution: {integrity: sha512-5O1S53mZiJyZYcvxxD0Qv1EY7qFPSxbGyD8CbVK6gw7W9FvcXZj2YIX1ZkOqyQQ3Xt2rFkZDHJv0+V3Zmmp8CA==}
++
++  '@deepseek-ai/dsh-api-settings-controller@0.2.2-rc.1':
++    resolution: {integrity: sha512-AQ6dw6IkHAF2ObpS36e/m7ogoQHuYBcHegb0xZ7oHvovno80pvsOJD23iypN6wkPRmRxm/x/WTtbzKgjddtX5A==}
++    peerDependencies:
++      '@deepseek-ai/cordis': ~4.1.0
++      '@deepseek-ai/dsh-agent-preset-registry': 0.2.2-rc.1
++      '@deepseek-ai/dsh-credentials': 0.2.2-rc.1
++      '@deepseek-ai/dsh-native-command': 0.2.2-rc.1
++      '@deepseek-ai/dsh-session': 0.2.2-rc.1
++      '@deepseek-ai/dsh-settings': 0.2.2-rc.1
++      '@deepseek-ai/dsh-typert-protocol': 0.2.2-rc.1
++
++  '@deepseek-ai/dsh-app-boot@0.2.2-rc.1':
++    resolution: {integrity: sha512-eDGdx7SySAOtj7IFZtU/DVMXkfI+6skNeVTtujURtZUEA0ZNaOmUbwT+z4EsFjkg5x5o8PRwtnsDg+GKk+nn4Q==}
++    peerDependencies:
++      '@deepseek-ai/cordis': ~4.1.0
++      '@deepseek-ai/cordis-plugin-group': ~1.1.0
++      '@deepseek-ai/cordis-plugin-include': ~1.1.0
++      '@deepseek-ai/cordis-plugin-loader': ~1.1.0
++      '@deepseek-ai/dsh-home-paths': 0.2.2-rc.1
++      '@deepseek-ai/dsh-launch-environment': 0.2.2-rc.1
++
++  '@deepseek-ai/dsh-atomic-write@0.2.2-rc.1':
++    resolution: {integrity: sha512-P9Ys/iN0WL6th9jB2uOsiEXaR3Kb/oVbiI42VPFa+AxtIhj4vYF6Tx8MvvRSxzDDxNWPrR1dsAuhxtI2pT+MVQ==}
++    peerDependencies:
++      '@deepseek-ai/cordis': ~4.1.0
++
++  '@deepseek-ai/dsh-brand@0.2.2-rc.1':
++    resolution: {integrity: sha512-ShGNEmNuEQA+bfkspWC2kGrdbrM4dFNhqlrNHIWsHO+PgVH1KoTKTLSraT1pt0A8YYk/moKE0gL2gY9dNBU+rw==}
++    peerDependencies:
++      '@deepseek-ai/cordis': ~4.1.0
++
++  '@deepseek-ai/dsh-config-editor@0.2.2-rc.1':
++    resolution: {integrity: sha512-RDuZgYqq7GtGSzlGgVvLS7ScLhkyvevWoyZaPywnEYDGgiar/EGbozJ+2LvzlSeNqDg9cJOkXu0fEuRQTmOmuA==}
++    peerDependencies:
++      '@deepseek-ai/cordis': ~4.1.0
++      '@deepseek-ai/cordis-plugin-include': ~1.1.0
++      '@deepseek-ai/cordis-plugin-loader': ~1.1.0
++      '@deepseek-ai/dsh-app-boot': 0.2.2-rc.1
++      '@deepseek-ai/dsh-hmr': 0.2.2-rc.1
++    peerDependenciesMeta:
++      '@deepseek-ai/dsh-hmr':
++        optional: true
++
++  '@deepseek-ai/dsh-llm@0.2.2-rc.1':
++    resolution: {integrity: sha512-XeEvH+6bpkjx0E2P1B5ZE+WWa+VHp4DimQaJDKNUZEFouqHMuN1B61TIz6IzUquRxa/6X4yJy+qXQ9WwAeMw5w==}
++    peerDependencies:
++      '@deepseek-ai/cordis': ~4.1.0
+ 
+-  '@deepseek-ai/dsh-brand@0.1.5-rc.2':
+-    resolution: {integrity: sha512-/+3TzQRYT4M8NINZ9OrsL5VWNyQSXof8mFLx3txiosWA7Bt0H6UcxUdKGXVwj6gCXhsQ74mzEHm2ucsflG0mYA==}
++  '@deepseek-ai/dsh-official-bundles@0.2.2-rc.1':
++    resolution: {integrity: sha512-A9+tzsoc8V57HAblw7d6T6QDglSxSHUk/3fJGTnOnv4fI8VgQ4WpoK0J+uiBIA2KAPLOtj/x8itVfvxzyhz3fg==}
+     peerDependencies:
+-      '@deepseek-ai/cordis': ^4.0.2
++      '@deepseek-ai/cordis': ~4.1.0
+ 
+-  '@deepseek-ai/dsh-llm@0.1.5-rc.2':
+-    resolution: {integrity: sha512-Z7BVsBkK24SE4EItQeow8PHms/9GP0DSTi337vTAa/RY7tNg2Snz3INcXUj6CPZfvntQr1in9op9wLI+rfNsqA==}
++  '@deepseek-ai/dsh-package-manifest@0.2.2-rc.1':
++    resolution: {integrity: sha512-/Dz9+N+iMLu4QaXC28Miy1ClgZpHcWEq+B7+BQVwekdWwEPyFrPPjcl6slTXtq2ZlhOh/lNhXousZzyg7TsyKA==}
+     peerDependencies:
+-      '@deepseek-ai/cordis': ^4.0.2
++      '@deepseek-ai/cordis': ~4.1.0
+ 
+-  '@deepseek-ai/dsh-timeout@0.1.5-rc.2':
+-    resolution: {integrity: sha512-FgfaAw8Zt5X4Y6Ljh833B8Hy7h96FeR+yjNKI3iSyZSqREqOBgvDGXFfQlSu6V3Buvw/cbI/CJUQJvfRBKXOiA==}
++  '@deepseek-ai/dsh-settings@0.2.2-rc.1':
++    resolution: {integrity: sha512-Wyec4ea7GeZjN/ktXXzm0BO1Im3e1e0Rsq5cYGDkN6cZfLZLz40BeHSw3Erg7Rrangl14ZW5FuZ4s5gvlSlSLA==}
+     peerDependencies:
+-      '@deepseek-ai/cordis': ^4.0.2
++      '@deepseek-ai/cordis': ~4.1.0
++      '@deepseek-ai/dsh-brand': 0.2.2-rc.1
++      '@deepseek-ai/dsh-session': 0.2.2-rc.1
++      '@deepseek-ai/schemastery': ~3.19.0
+ 
+-  '@deepseek-ai/dsh-typert-protocol@0.1.5-rc.2':
+-    resolution: {integrity: sha512-zP8J20rBXa1AFjKL2i83JBeQcePZx8yal3pNojj4t7CCokMcoFMUbr50woa6fY1tRJ7qHxgypO3rH8Q6YWgmiA==}
++  '@deepseek-ai/dsh-timeout@0.2.2-rc.1':
++    resolution: {integrity: sha512-dn5eQbPjdQIH2WrVXyQjxgsxkB006+O8OhclMQZtIZnUjWaqxtBmot0wSdyrPxrULyXxiHmmdRCeLruZBO0n0Q==}
+     peerDependencies:
+-      '@deepseek-ai/cordis': ^4.0.2
++      '@deepseek-ai/cordis': ~4.1.0
+ 
+-  '@deepseek-ai/dsh-util-crypto@0.1.5-rc.2':
+-    resolution: {integrity: sha512-JR0aJEUL35RE8FVT89wMZMbPwMrbkjNcy+gE9pq70d/m2Zxw3a0iNer+BAxPAKYPbmy0xDDXReTwXiecKVy4sQ==}
++  '@deepseek-ai/dsh-typert-protocol@0.2.2-rc.1':
++    resolution: {integrity: sha512-TrasPUFkoUafa9gAALMRYy2skAiM1nQ9qmmbgWF8FyHyIQsMTK4BTW8g4JcRnS0+y9YTIk2OytRT2ps9NGzI9A==}
+     peerDependencies:
+-      '@deepseek-ai/cordis': ^4.0.2
++      '@deepseek-ai/cordis': ~4.1.0
+ 
+-  '@deepseek-ai/dsh-util-values@0.1.5-rc.2':
+-    resolution: {integrity: sha512-Cr0TkM6dFAD+Iy4sNXH/afJVMHwJXoOztivj+RflkYoACsOq+Ix0vdHn36hwW7mayU8OK3ZKIZUQ6BPo1fHvUg==}
++  '@deepseek-ai/dsh-util-crypto@0.2.2-rc.1':
++    resolution: {integrity: sha512-I9Nhh3/64HPzjdR/mUt0J534FYHgodMUe0coXtA91+kxGcJQcSHOYouewv4hf0NWw0BuLh5zihTdtldZtobOWA==}
+     peerDependencies:
+-      '@deepseek-ai/cordis': ^4.0.2
++      '@deepseek-ai/cordis': ~4.1.0
++
++  '@deepseek-ai/dsh-util-values@0.2.2-rc.1':
++    resolution: {integrity: sha512-UN4B/Fa9zAunYN3UuXDQ3QknxF/lMKNwTu2WxXKKEC+Ejz745po7I/JmsVFVa7+socfuwwTmVrfSsddRVU+lew==}
++    peerDependencies:
++      '@deepseek-ai/cordis': ~4.1.0
++
++  '@deepseek-ai/schemastery@3.19.0':
++    resolution: {integrity: sha512-bDXoYQa7ghAhmdYD5VPlzKxEzJV/aKkz5l4V5h1u06z8GAPN1ROewSjvR9WiXhpa52E9fng8lpH5QdCRIQgnyQ==}
+ 
+-  '@deepseek-ai/schemastery@3.18.2':
+-    resolution: {integrity: sha512-njDtZsznjYxok7KLLlHOPyuv2efdWVbSflAHgztSfbMsg+CVraEoRe2DjOCgClYv3ZCSm7WXoaUkbB/+RY7tWQ==}
++  '@eslint-community/regexpp@4.12.2':
++    resolution: {integrity: sha512-EriSTlt5OC9/7SXkRSCAhfSxxoSUgBm33OH+IkwbdpgoqsSsUg7y3uh+IICI/Qg4BBWr3U2i39RpmycbxMq4ew==}
++    engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
+ 
+   '@standard-schema/spec@1.1.0':
+     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+@@ -77,67 +162,236 @@ packages:
+   ajv@8.20.0:
+     resolution: {integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==}
+ 
++  argparse@2.0.1:
++    resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
++
+   fast-deep-equal@3.1.3:
+     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
+ 
+   fast-uri@3.1.7:
+     resolution: {integrity: sha512-dOvZVzjdZdz7phd9v6jCbwxrBW3fK6n8Rc0CtdmM4bumzMnxywBYhuph6J819RRw/ku+rLbelwfMunktuzVVHg==}
+ 
++  js-yaml@4.3.2:
++    resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
++    hasBin: true
++
+   json-schema-traverse@1.0.0:
+     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
+ 
++  node-addon-native-custom-loader@0.1.9:
++    resolution: {integrity: sha512-Zh87aubSc1UF8CzZsRws1KtSwXiPDH0tbcg8V/2OA8Tcq9yGJRESFcEOC5NGLFama5IGfC3aJhubZbrj9Un2qA==}
++    engines: {node: '>=20'}
++
++  node-addon-require-builtin-darwin-arm64@0.1.9:
++    resolution: {integrity: sha512-n45xEILQVOLZ2hVhzRXesTMYS4odHquyI/B/IkPMPUCONa8PjNfBag6lYBH4wDrhgpLNNBwMsUD8d8O/13QPPA==}
++    engines: {node: '>=20'}
++    cpu: [arm64]
++    os: [darwin]
++
++  node-addon-require-builtin-darwin-x64@0.1.9:
++    resolution: {integrity: sha512-Sm4Liqh1uo9zgJB2F/pACPPZdHu+fj9Qniyr1Q99dDQB0v71VgZgkAgv3K0/E1iPQBlZq9rakFkY7MGUIfWc0A==}
++    engines: {node: '>=20'}
++    cpu: [x64]
++    os: [darwin]
++
++  node-addon-require-builtin-linux-arm64-gnu@0.1.9:
++    resolution: {integrity: sha512-ToU4wGtOD/069i2y4fJ3cjDJiiWtcjSQTZMf0YKlotb5BmTM7FjhR3X1aub8J/YjlOwl6665J/XAYuvCaDO5sA==}
++    engines: {node: '>=20'}
++    cpu: [arm64]
++    os: [linux]
++    libc: [glibc]
++
++  node-addon-require-builtin-linux-arm64-musl@0.1.9:
++    resolution: {integrity: sha512-85Z5Avp++wfa9iiTIH8LC/r6qvlC/CiwpifiwIz0gYQ9PzajTSkz06gX7YDqf1oUqWYxU9uwNEOmo7mktHOOfA==}
++    engines: {node: '>=20'}
++    cpu: [arm64]
++    os: [linux]
++    libc: [musl]
++
++  node-addon-require-builtin-linux-x64-gnu@0.1.9:
++    resolution: {integrity: sha512-fh3K3/JvBfSYwU8vEOpp4Wdp4N/jX0EnZYq5GsaftlQin1FVqgve/yDNoh+asxBMOQyHOG8F4dXlV1WCierrfg==}
++    engines: {node: '>=20'}
++    cpu: [x64]
++    os: [linux]
++    libc: [glibc]
++
++  node-addon-require-builtin-linux-x64-musl@0.1.9:
++    resolution: {integrity: sha512-B6fu/5xmbRxnifM7nWz0IESkYnUl8dwFZmRDMsxdhzv2nb+EtBRFAXg4lf73qhX3yoZD4SnWJILBQMlIAwBCzw==}
++    engines: {node: '>=20'}
++    cpu: [x64]
++    os: [linux]
++    libc: [musl]
++
++  node-addon-require-builtin-win32-arm64-msvc@0.1.9:
++    resolution: {integrity: sha512-FOQuzNe8B1BANu886rJgdbQuRxPGUQmewkykw87wSr32U0ibQ3AWGuUM/Gh7LG4RekjFaifj7gEI/tq2+6GU6g==}
++    engines: {node: '>=20'}
++    cpu: [arm64]
++    os: [win32]
++
++  node-addon-require-builtin-win32-ia32-msvc@0.1.9:
++    resolution: {integrity: sha512-N29P0kmIBT6hnkNNFYzxn+o9ydT6OYZe9RFAi8dSxV1rNSul1FlxtuKWYe8w2sQpbQGYuGDEtpOwdeFtq2iFTg==}
++    engines: {node: '>=20 <23'}
++    cpu: [ia32]
++    os: [win32]
++
++  node-addon-require-builtin-win32-x64-msvc@0.1.9:
++    resolution: {integrity: sha512-+i6N4A7m7txjbw8pDYESdWXiKO9EEVq0SzTzwPS0WZuV4F1MzQnaDJwJJnO7T6zAc0BvqHXBOkpharCrUjFhbQ==}
++    engines: {node: '>=20'}
++    cpu: [x64]
++    os: [win32]
++
++  node-addon-require-builtin@0.1.9:
++    resolution: {integrity: sha512-BCxXCMZDs/VLLh64SwKNw/me7Qx1I7Be4qxWwYVRRm8tJoOB8fL7qg6CmXhSXeUqsKt72t8RaKCX4EN+5nocVg==}
++    engines: {node: '>=20'}
++
++  pnpm@11.28.5:
++    resolution: {integrity: sha512-SEVj0wtMKtJ8tIqpT/KzAtvOvI/2vyiBbCWJiG4UbOf3bzVPO8GkOOb16XaMMCqgpvet2CMpA81M+BQmy8FNng==}
++    engines: {node: '>=22.13'}
++    hasBin: true
++
+   require-from-string@2.0.2:
+     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
+     engines: {node: '>=0.10.0'}
+ 
++  resolve.exports@2.0.4:
++    resolution: {integrity: sha512-zepuGL0ulf+nt+XaFrlKeaiTJeyPFPLLY62+ncq1/VTHBdt3HsfXOH60priZ6tnXQozdGcDeIF5JVTanvIcYWQ==}
++    engines: {node: '>=10'}
++
++  semver@7.8.6:
++    resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
++    engines: {node: '>=10'}
++    hasBin: true
++
++  yaml@2.9.1:
++    resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
++    engines: {node: '>= 14.6'}
++    hasBin: true
++
++  zod@4.4.3:
++    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
++
+   zod@4.6.5:
+     resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
+ 
+ snapshots:
+ 
+-  '@deepseek-ai/cordis@4.0.2':
++  '@deepseek-ai/cordis-plugin-loader@1.1.0(@deepseek-ai/cordis@4.1.0)(node-addon-require-builtin@0.1.9)':
++    dependencies:
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++      '@deepseek-ai/cosmokit': 1.9.0
++      '@deepseek-ai/schemastery': 3.19.0
++    optionalDependencies:
++      node-addon-require-builtin: 0.1.9
++
++  '@deepseek-ai/cordis@4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)':
+     dependencies:
+-      '@deepseek-ai/cosmokit': 1.8.3
++      '@deepseek-ai/cosmokit': 1.9.0
+       '@standard-schema/spec': 1.1.0
++    optionalDependencies:
++      '@deepseek-ai/cordis-plugin-loader': 1.1.0(@deepseek-ai/cordis@4.1.0)(node-addon-require-builtin@0.1.9)
+ 
+-  '@deepseek-ai/cosmokit@1.8.3': {}
++  '@deepseek-ai/cosmokit@1.9.0': {}
+ 
+-  '@deepseek-ai/dsh-brand@0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)':
++  '@deepseek-ai/dsh-api-settings-controller@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)(@deepseek-ai/dsh-settings@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)(@deepseek-ai/dsh-app-boot@0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0))(@deepseek-ai/dsh-brand@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0))(@deepseek-ai/schemastery@3.19.0)(node-addon-require-builtin@0.1.9))(@deepseek-ai/dsh-typert-protocol@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0))':
+     dependencies:
+-      '@deepseek-ai/cordis': 4.0.2
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++      '@deepseek-ai/dsh-settings': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)(@deepseek-ai/dsh-app-boot@0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0))(@deepseek-ai/dsh-brand@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0))(@deepseek-ai/schemastery@3.19.0)(node-addon-require-builtin@0.1.9)
++      '@deepseek-ai/dsh-typert-protocol': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/schemastery': 3.19.0
++      zod: 4.4.3
+ 
+-  '@deepseek-ai/dsh-llm@0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)':
++  '@deepseek-ai/dsh-app-boot@0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0)':
+     dependencies:
+-      '@deepseek-ai/cordis': 4.0.2
+-      '@deepseek-ai/dsh-brand': 0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)
+-      '@deepseek-ai/dsh-timeout': 0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)
+-      '@deepseek-ai/dsh-typert-protocol': 0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)
+-      '@deepseek-ai/dsh-util-crypto': 0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)
+-      '@deepseek-ai/dsh-util-values': 0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)
+-      '@deepseek-ai/schemastery': 3.18.2
+-      zod: 4.6.5
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++      '@deepseek-ai/cordis-plugin-loader': 1.1.0(@deepseek-ai/cordis@4.1.0)(node-addon-require-builtin@0.1.9)
++      '@deepseek-ai/dsh-atomic-write': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/dsh-official-bundles': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/dsh-package-manifest': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@eslint-community/regexpp': 4.12.2
++      ajv: 8.20.0
++      js-yaml: 4.3.2
++      node-addon-require-builtin: 0.1.9
++      resolve.exports: 2.0.4
++      semver: 7.8.6
++
++  '@deepseek-ai/dsh-atomic-write@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)':
++    dependencies:
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
+ 
+-  '@deepseek-ai/dsh-timeout@0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)':
++  '@deepseek-ai/dsh-brand@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)':
+     dependencies:
+-      '@deepseek-ai/cordis': 4.0.2
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
+ 
+-  '@deepseek-ai/dsh-typert-protocol@0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)':
++  '@deepseek-ai/dsh-config-editor@0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0)(@deepseek-ai/dsh-app-boot@0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0))':
+     dependencies:
+-      '@deepseek-ai/cordis': 4.0.2
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++      '@deepseek-ai/cordis-plugin-loader': 1.1.0(@deepseek-ai/cordis@4.1.0)(node-addon-require-builtin@0.1.9)
++      '@deepseek-ai/dsh-app-boot': 0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/dsh-atomic-write': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      js-yaml: 4.3.2
++      yaml: 2.9.1
++
++  '@deepseek-ai/dsh-llm@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)':
++    dependencies:
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++      '@deepseek-ai/dsh-brand': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/dsh-timeout': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/dsh-typert-protocol': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/dsh-util-crypto': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/dsh-util-values': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/schemastery': 3.19.0
++      zod: 4.4.3
++
++  '@deepseek-ai/dsh-official-bundles@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)':
++    dependencies:
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++      '@deepseek-ai/dsh-package-manifest': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++
++  '@deepseek-ai/dsh-package-manifest@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)':
++    dependencies:
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++
++  '@deepseek-ai/dsh-settings@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)(@deepseek-ai/dsh-app-boot@0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0))(@deepseek-ai/dsh-brand@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0))(@deepseek-ai/schemastery@3.19.0)(node-addon-require-builtin@0.1.9)':
++    dependencies:
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++      '@deepseek-ai/cordis-plugin-loader': 1.1.0(@deepseek-ai/cordis@4.1.0)(node-addon-require-builtin@0.1.9)
++      '@deepseek-ai/cosmokit': 1.9.0
++      '@deepseek-ai/dsh-brand': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/dsh-config-editor': 0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0)(@deepseek-ai/dsh-app-boot@0.2.2-rc.1(@deepseek-ai/cordis-plugin-loader@1.1.0)(@deepseek-ai/cordis@4.1.0))
++      '@deepseek-ai/dsh-util-values': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      '@deepseek-ai/schemastery': 3.19.0
++      yaml: 2.9.1
++    transitivePeerDependencies:
++      - '@deepseek-ai/cordis-plugin-include'
++      - '@deepseek-ai/dsh-app-boot'
++      - '@deepseek-ai/dsh-hmr'
++      - node-addon-require-builtin
++
++  '@deepseek-ai/dsh-timeout@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)':
++    dependencies:
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++
++  '@deepseek-ai/dsh-typert-protocol@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)':
++    dependencies:
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
++      '@deepseek-ai/dsh-brand': 0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)
++      zod: 4.6.5
+ 
+-  '@deepseek-ai/dsh-util-crypto@0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)':
++  '@deepseek-ai/dsh-util-crypto@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)':
+     dependencies:
+-      '@deepseek-ai/cordis': 4.0.2
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
+ 
+-  '@deepseek-ai/dsh-util-values@0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)':
++  '@deepseek-ai/dsh-util-values@0.2.2-rc.1(@deepseek-ai/cordis@4.1.0)':
+     dependencies:
+-      '@deepseek-ai/cordis': 4.0.2
++      '@deepseek-ai/cordis': 4.1.0(@deepseek-ai/cordis-plugin-loader@1.1.0)
+ 
+-  '@deepseek-ai/schemastery@3.18.2':
++  '@deepseek-ai/schemastery@3.19.0':
+     dependencies:
+-      '@deepseek-ai/cosmokit': 1.8.3
++      '@deepseek-ai/cosmokit': 1.9.0
+       '@standard-schema/spec': 1.1.0
+ 
++  '@eslint-community/regexpp@4.12.2': {}
++
+   '@standard-schema/spec@1.1.0': {}
+ 
+   ajv@8.20.0:
+@@ -147,12 +401,89 @@ snapshots:
+       json-schema-traverse: 1.0.0
+       require-from-string: 2.0.2
+ 
++  argparse@2.0.1: {}
++
+   fast-deep-equal@3.1.3: {}
+ 
+   fast-uri@3.1.7: {}
+ 
++  js-yaml@4.3.2:
++    dependencies:
++      argparse: 2.0.1
++
+   json-schema-traverse@1.0.0: {}
+ 
++  node-addon-native-custom-loader@0.1.9: {}
++
++  node-addon-require-builtin-darwin-arm64@0.1.9:
++    dependencies:
++      node-addon-native-custom-loader: 0.1.9
++    optional: true
++
++  node-addon-require-builtin-darwin-x64@0.1.9:
++    dependencies:
++      node-addon-native-custom-loader: 0.1.9
++    optional: true
++
++  node-addon-require-builtin-linux-arm64-gnu@0.1.9:
++    dependencies:
++      node-addon-native-custom-loader: 0.1.9
++    optional: true
++
++  node-addon-require-builtin-linux-arm64-musl@0.1.9:
++    dependencies:
++      node-addon-native-custom-loader: 0.1.9
++    optional: true
++
++  node-addon-require-builtin-linux-x64-gnu@0.1.9:
++    dependencies:
++      node-addon-native-custom-loader: 0.1.9
++    optional: true
++
++  node-addon-require-builtin-linux-x64-musl@0.1.9:
++    dependencies:
++      node-addon-native-custom-loader: 0.1.9
++    optional: true
++
++  node-addon-require-builtin-win32-arm64-msvc@0.1.9:
++    dependencies:
++      node-addon-native-custom-loader: 0.1.9
++    optional: true
++
++  node-addon-require-builtin-win32-ia32-msvc@0.1.9:
++    dependencies:
++      node-addon-native-custom-loader: 0.1.9
++    optional: true
++
++  node-addon-require-builtin-win32-x64-msvc@0.1.9:
++    dependencies:
++      node-addon-native-custom-loader: 0.1.9
++    optional: true
++
++  node-addon-require-builtin@0.1.9:
++    dependencies:
++      node-addon-native-custom-loader: 0.1.9
++    optionalDependencies:
++      node-addon-require-builtin-darwin-arm64: 0.1.9
++      node-addon-require-builtin-darwin-x64: 0.1.9
++      node-addon-require-builtin-linux-arm64-gnu: 0.1.9
++      node-addon-require-builtin-linux-arm64-musl: 0.1.9
++      node-addon-require-builtin-linux-x64-gnu: 0.1.9
++      node-addon-require-builtin-linux-x64-musl: 0.1.9
++      node-addon-require-builtin-win32-arm64-msvc: 0.1.9
++      node-addon-require-builtin-win32-ia32-msvc: 0.1.9
++      node-addon-require-builtin-win32-x64-msvc: 0.1.9
++
++  pnpm@11.28.5: {}
++
+   require-from-string@2.0.2: {}
+ 
++  resolve.exports@2.0.4: {}
++
++  semver@7.8.6: {}
++
++  yaml@2.9.1: {}
++
++  zod@4.4.3: {}
++
+   zod@4.6.5: {}
+diff --git a/scripts/install-desktop.mjs b/scripts/install-desktop.mjs
+new file mode 100644
+index 0000000..7d8fea0
+--- /dev/null
++++ b/scripts/install-desktop.mjs
+@@ -0,0 +1,70 @@
++#!/usr/bin/env node
++// Run with a system Node >=24.9.0. All profile package operations use Desktop's
++// own carrier, with its transaction lock, bundled pnpm and compatibility gate.
++import { spawnSync } from 'node:child_process';
++import { readFile, readdir, cp, rename, access } from 'node:fs/promises';
++import { dirname, join, resolve } from 'node:path';
++import { fileURLToPath } from 'node:url';
++
++const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
++const dsh = process.argv[2] ?? '/usr/local/bin/dsh';
++const target = '0.2.2-rc.1';
++function run(args, capture = false) {
++  const result = spawnSync(dsh, args, { encoding: 'utf8', stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit' });
++  if (result.error) throw result.error;
++  if (result.status !== 0) throw new Error(`Desktop 命令失败（退出码 ${result.status}）。${capture ? result.stderr : ''}`);
++  return result.stdout?.trim();
++}
++let dir, backup, mutated = false;
++try {
++  const [major, minor] = process.versions.node.split('.').map(Number);
++  if (major < 24 || (major === 24 && minor < 9)) throw new Error('需要 Node.js >=24.9.0。');
++  const version = run(['--version'], true);
++  if (!new RegExp(`(?:^|\\s)${target.replaceAll('.', '\\.')}($|\\s)`).test(version)) throw new Error(`本适配包仅支持 Desktop ${target}；命令报告：${version}`);
++  if (process.platform === 'darwin') {
++    const running = spawnSync('/usr/bin/pgrep', ['-f', '/DeepSeek Harness.app/Contents/MacOS/'], { encoding: 'utf8' });
++    if (running.status === 0) throw new Error('请先用 ⌘Q 完全退出 DeepSeek Harness，再运行安装脚本。');
++  }
++  const archives = (await readdir(join(root, 'dist'))).filter(name => /^dsh-web-bridge-.*\.tgz$/.test(name));
++  if (archives.length !== 1) throw new Error('dist 下必须有且只有一个适配版 tgz 安装包。');
++  const archive = join(root, 'dist', archives[0]);
++  // Ask the installed carrier for the actual path (honors custom DSH_HOME).
++  const output = run(['plugin', '--profile', 'desktop', 'exec', 'node', '-p', 'JSON.stringify({profileDir:process.cwd()})'], true);
++  const line = output.split(/\r?\n/).findLast(line => line.startsWith('{"profileDir":'));
++  dir = JSON.parse(line).profileDir;
++  const manifest = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
++  if (!manifest.dsh?.profile || !dir.endsWith('/profiles/desktop')) throw new Error('无法确认 Desktop profile，未修改任何文件。');
++  backup = dir + '.before-web-bridge-' + Date.now();
++  await cp(dir, backup, { recursive: true, errorOnExist: true, force: false, verbatimSymlinks: true });
++  console.log('已备份完整 profile：' + backup);
++  mutated = true;
++  if (manifest.dependencies?.['dsh-web-bridge']) run(['plugin', '--profile', 'desktop', 'remove', 'dsh-web-bridge']);
++  run(['plugin', '--profile', 'desktop', 'add', archive]);
++  // These packages should be provided by the installation, not the plugin.
++  const scopes = await readdir(join(dir, 'node_modules', '@deepseek-ai')).catch(error => { if (error.code === 'ENOENT') return []; throw error; });
++  for (const name of scopes.filter(name => name.startsWith('dsh-') || name === 'schemastery' || name === 'cordis')) {
++    let local;
++    try { local = JSON.parse(await readFile(join(dir, 'node_modules', '@deepseek-ai', name, 'package.json'), 'utf8')); }
++    catch (error) { if (error.code !== 'ENOENT') throw error; }
++    const valid = name === 'schemastery' ? /^3\.19\./.test(local?.version) : name === 'cordis' ? /^4\.1\./.test(local?.version) : local?.version === target;
++    if (local && !valid) throw new Error(`其他插件仍在 profile 安装了 ${name}@${local.version}；需要先处理版本冲突。`);
++  }
++  run(['plugin', '--profile', 'desktop', 'exec', 'dsh-web-bridge', 'setup']);
++  await access(join(dir, 'web-bridge', 'chrome', 'local-config.json'));
++  console.log('\n安装及配对文件生成完成。');
++  console.log('Chrome 加载目录：' + join(dir, 'web-bridge', 'chrome'));
++  console.log('重新打开 Desktop，在模型菜单选择“DeepSeek 网页”。');
++  console.log('若应用启动失败，完全退出后可运行：');
++  console.log('node ' + JSON.stringify(join(root, 'scripts', 'rollback-desktop.mjs')) + ' ' + JSON.stringify(backup));
++} catch (error) {
++  console.error(error.message);
++  if (mutated && backup) {
++    try {
++      const failed = dir + '.failed-web-bridge-' + Date.now();
++      await rename(dir, failed);
++      await cp(backup, dir, { recursive: true, errorOnExist: true, force: false, verbatimSymlinks: true });
++      console.error('已恢复安装前 profile；失败现场保留在：' + failed);
++    } catch (rollback) { console.error('自动恢复未完成：' + rollback.message + '\n完整备份：' + backup); }
++  }
++  process.exitCode = 1;
++}
+diff --git a/scripts/rollback-desktop.mjs b/scripts/rollback-desktop.mjs
+new file mode 100644
+index 0000000..2d6ac4a
+--- /dev/null
++++ b/scripts/rollback-desktop.mjs
+@@ -0,0 +1,16 @@
++#!/usr/bin/env node
++import { cp, rename, readFile } from 'node:fs/promises';
++import { resolve } from 'node:path';
++import { spawnSync } from 'node:child_process';
++try {
++  const backup = resolve(process.argv[2] ?? '');
++  if (!/\/profiles\/desktop\.before-web-bridge-\d+$/.test(backup)) throw new Error('请指定安装脚本打印的完整备份目录。');
++  if (process.platform === 'darwin' && spawnSync('/usr/bin/pgrep', ['-f', '/DeepSeek Harness.app/Contents/MacOS/']).status === 0) throw new Error('请先完全退出 Desktop。');
++  const manifest = JSON.parse(await readFile(backup + '/package.json', 'utf8'));
++  if (!manifest.dsh?.profile) throw new Error('备份不是有效 profile。');
++  const dir = backup.replace(/\.before-web-bridge-\d+$/, '');
++  const failed = dir + '.after-web-bridge-' + Date.now();
++  try { await rename(dir, failed); } catch (error) { if (error.code !== 'ENOENT') throw error; }
++  await cp(backup, dir, { recursive: true, force: false, errorOnExist: true, verbatimSymlinks: true });
++  console.log('已恢复安装前 Desktop profile。原适配配置保留在：' + failed);
++} catch (error) { console.error(error.message); process.exitCode = 1; }
+diff --git a/scripts/verify-packed-runtime.mjs b/scripts/verify-packed-runtime.mjs
+new file mode 100644
+index 0000000..a132c11
+--- /dev/null
++++ b/scripts/verify-packed-runtime.mjs
+@@ -0,0 +1,58 @@
++// Development-only: pass a pnpm-installed production profile directory.
++// Proves that a package with missing local peers actually uses the 0.2.2
++// runtime interception, rather than accidentally using our development tree.
++import assert from 'node:assert/strict';
++import { mkdtemp, writeFile, mkdir, readFile, rm, access } from 'node:fs/promises';
++import { join, resolve } from 'node:path';
++import { pathToFileURL } from 'node:url';
++import { boot, loadProfileDirectory, readProfilePatches, createRuntimeResolution, PluginPackages } from '@deepseek-ai/dsh-app-boot';
++import Settings from '@deepseek-ai/dsh-settings';
++import ConfigEditor from '@deepseek-ai/dsh-config-editor';
++import { SettingsController } from '@deepseek-ai/dsh-api-settings-controller';
++import { LlmRuntime } from '@deepseek-ai/dsh-llm';
++import z from '@deepseek-ai/schemastery';
++
++const dir = resolve(process.argv[2]);
++const root = resolve(import.meta.dirname, '..');
++const install = await mkdtemp(join(root, '.packed-host-'));
++let ctx;
++try {
++  const manifest = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
++  manifest.dsh.profile.bundles = ['test-runtime-bundle', 'dsh-web-bridge'];
++  await writeFile(join(dir, 'package.json'), JSON.stringify(manifest));
++  for (const name of ['dsh-llm', 'dsh-typert-protocol', 'schemastery', 'cordis']) {
++    await assert.rejects(access(join(dir, 'node_modules', '@deepseek-ai', name)), { code: 'ENOENT' });
++  }
++  await writeFile(join(install, 'package.json'), JSON.stringify({ name: 'desktop-test-installation', version: '0.2.2-rc.1', dependencies: {
++    '@deepseek-ai/cordis': '4.1.0', '@deepseek-ai/schemastery': '3.19.0', '@deepseek-ai/dsh-llm': '0.2.2-rc.1', '@deepseek-ai/dsh-app-boot': '0.2.2-rc.1', '@deepseek-ai/dsh-settings': '0.2.2-rc.1', '@deepseek-ai/dsh-config-editor': '0.2.2-rc.1', '@deepseek-ai/dsh-api-settings-controller': '0.2.2-rc.1',
++  } }));
++  const bundle = join(dir, 'node_modules', 'test-runtime-bundle');
++  await mkdir(bundle, { recursive: true });
++  await writeFile(join(bundle, 'package.json'), JSON.stringify({ name: 'test-runtime-bundle', version: '1.0.0', dsh: { bundle: { patch: 'patch.yml' } } }));
++  await writeFile(join(bundle, 'patch.yml'), JSON.stringify([{ insert: [
++    { id: 'editor', name: 'cordis:editor' }, { id: 'settings', name: 'cordis:settings' },
++    { id: 'controller', name: 'cordis:controller' }, { id: 'llm', name: 'cordis:llm' },
++    { id: 'locale', name: 'cordis:locale' },
++  ] }]));
++  const installAnchor = join(install, 'package.json');
++  const home = install;
++  const profile = loadProfileDirectory('packed-test', dir, installAnchor);
++  const resolution = await createRuntimeResolution({ installAnchor, profile, home });
++  const profileContext = { name: 'desktop', dir, home, installAnchor, patchPath: join(dir, 'cordis.patch.yml'), startedBundles: manifest.dsh.profile.bundles, cwd: home, overlays: [] };
++  const { setup } = await import(pathToFileURL(join(dir, 'node_modules', 'dsh-web-bridge', 'bin', 'dsh-web-bridge.mjs')).href);
++  await setup(['--profile-dir', dir]);
++  await writeFile(join(dir, 'cordis.yml'), '[]');
++  ctx = await boot('packed-desktop-test', join(dir, 'cordis.yml'), readProfilePatches('packed-desktop-test', profileContext), async ctx => {
++    ctx.provide('profileContext', profileContext);
++    await ctx.plugin(PluginPackages, { resolution });
++    Object.assign(ctx.loader.builtins, { editor: ConfigEditor, settings: Settings, controller: SettingsController, llm: LlmRuntime,
++      locale: { Config: z.object({ preference: z.string().default('zh-CN').volatile() }), apply() {} } });
++  });
++  assert.ok(ctx.settingsController.describe().namespaces.some(n => n.ns === 'locale'));
++  assert.ok(ctx.llm.listProviders().some(p => p.id === 'deepseek-web'));
++  assert.equal((await ctx.llm.listModels('deepseek-web'))[0].id, 'deepseek-web');
++  console.log('PASS: production tgz has no local core packages; actual runtime interception loads the bridge, reads settings and lists the model.');
++} finally {
++  if (ctx) await ctx.fiber.dispose();
++  await rm(install, { recursive: true, force: true });
++}
+diff --git a/scripts/verify-source.mjs b/scripts/verify-source.mjs
+index 8f84364..d476bb2 100644
+--- a/scripts/verify-source.mjs
++++ b/scripts/verify-source.mjs
+@@ -2,5 +2,6 @@ import {readFileSync} from 'node:fs';
+ import {createHash} from 'node:crypto';
+ import assert from 'node:assert/strict';
+ const manifest=JSON.parse(readFileSync(new URL('../SOURCE.json',import.meta.url)));
+-for(const [file,expected] of Object.entries(manifest.sha256)) assert.equal(createHash('sha256').update(readFileSync(new URL('../'+file,import.meta.url))).digest('hex'),expected,file);
+-console.log('Verified '+Object.keys(manifest.sha256).length+' baseline files: '+manifest.sourceCommit);
++const adaptation=JSON.parse(readFileSync(new URL('../ADAPTATION.json',import.meta.url)));
++for(const [file,expected] of Object.entries({...manifest.sha256,...adaptation.sha256})) assert.equal(createHash('sha256').update(readFileSync(new URL('../'+file,import.meta.url))).digest('hex'),expected,file);
++console.log('Verified baseline plus Desktop adaptation: '+adaptation.targetHarnessTag);
+diff --git a/tests/desktop-runtime.test.mjs b/tests/desktop-runtime.test.mjs
+new file mode 100644
+index 0000000..aac5bdc
+--- /dev/null
++++ b/tests/desktop-runtime.test.mjs
+@@ -0,0 +1,114 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import { createServer } from 'node:http';
++import { setTimeout as delay } from 'node:timers/promises';
++import z from '@deepseek-ai/schemastery';
++import { boot, initProfile, readProfilePatches } from '@deepseek-ai/dsh-app-boot';
++import Settings from '@deepseek-ai/dsh-settings';
++import ConfigEditor from '@deepseek-ai/dsh-config-editor';
++import { SettingsController } from '@deepseek-ai/dsh-api-settings-controller';
++import { LlmRuntime, createUserMessage } from '@deepseek-ai/dsh-llm';
++import * as Bridge from '../plugins/dsh-web-bridge/index.js';
++import { setup } from '../bin/dsh-web-bridge.mjs';
++
++// Use the actual 0.2.2-rc.1 Loader, configuration composition, settings reader,
++// RPC controller and LLM runtime. No replacement settings or LLM implementation.
++async function fixture({ paired = false, port = 3081, patch = [] } = {}) {
++  const home = await mkdtemp(join(tmpdir(), 'bridge-desktop-'));
++  const dir = join(home, 'profiles', 'desktop');
++  initProfile(dir, ['test-bundle']);
++  const bundle = join(dir, 'node_modules', 'test-bundle');
++  await mkdir(bundle, { recursive: true });
++  await writeFile(join(home, 'package.json'), '{"name":"test-installation"}');
++  await writeFile(join(bundle, 'package.json'), JSON.stringify({ name: 'test-bundle', version: '1.0.0', dsh: { bundle: { patch: './cordis.patch.yml' } } }));
++  await writeFile(join(bundle, 'cordis.patch.yml'), JSON.stringify([{ insert: [
++    { id: 'config-editor', name: 'cordis:editor' },
++    { id: 'settings', name: 'cordis:settings' },
++    { id: 'settings-controller', name: 'cordis:controller' },
++    { id: 'llm', name: 'cordis:llm' },
++    { id: 'locale', name: 'cordis:locale' },
++    { id: 'deepseek-web-bridge', name: 'cordis:bridge', config: { port } },
++  ] }]));
++  await writeFile(join(dir, 'cordis.patch.yml'), JSON.stringify(patch));
++  await writeFile(join(dir, 'cordis.yml'), '[]');
++  if (paired) await setup(['--profile-dir', dir]);
++  const profile = { name: 'desktop', startedBundles: ['test-bundle'], dir, patchPath: join(dir, 'cordis.patch.yml'), installAnchor: join(home, 'package.json'), cwd: home, home, overlays: [], telemetryDisabledEnv: undefined };
++  let ctx;
++  try {
++    ctx = await boot('desktop-test', join(dir, 'cordis.yml'), readProfilePatches('desktop-test', profile), ctx => {
++      ctx.provide('profileContext', profile);
++      Object.assign(ctx.loader.builtins, { editor: ConfigEditor, settings: Settings, controller: SettingsController, llm: LlmRuntime, bridge: Bridge,
++        locale: { Config: z.object({ preference: z.string().default('zh-CN').volatile() }), apply() {} } });
++    });
++  } catch (error) { await rm(home, { recursive: true, force: true }); throw error; }
++  return { ctx, dir, close: async () => { await ctx.fiber.dispose(); await rm(home, { recursive: true, force: true }); } };
++}
++
++test('Desktop startup settings RPC survives an installed but unpaired bridge', async () => {
++  const f = await fixture();
++  try {
++    const value = f.ctx.settingsController.describe();
++    assert.ok(value.namespaces.some(n => n.ns === 'locale'));
++    assert.deepEqual(f.ctx.llm.listProviders(), []);
++  } finally { await f.close(); }
++});
++
++test('paired bridge boots beside real Desktop settings and streams through 0.2.2 LLM prepareCall', async () => {
++  const f = await fixture({ paired: true });
++  try {
++    assert.ok(f.ctx.settingsController.describe().namespaces.some(n => n.ns === 'locale'));
++    assert.ok(f.ctx.llm.listProviders().some(p => p.id === 'deepseek-web'));
++    assert.equal((await f.ctx.llm.listModels('deepseek-web'))[0].id, 'deepseek-web');
++    const key = (await readFile(join(f.dir, 'web-bridge', 'token'), 'utf8')).trim();
++    assert.ok(!JSON.stringify(f.ctx.settingsController.describe()).includes(key));
++    const call = await f.ctx.llm.prepareCall({ provider: 'deepseek-web', model: 'deepseek-web' });
++    const chunks = [];
++    for await (const chunk of call.stream({ ...call.config, purpose: 'session-title', messages: [createUserMessage({ content: [{ type: 'text', text: 'Desktop runtime smoke test' }], source: { kind: 'user' } })] })) chunks.push(chunk);
++    assert.ok(chunks.some(c => c.type === 'text-delta' && c.text.includes('Desktop runtime')));
++  } finally { await f.close(); }
++});
++
++test('bridge port collision does not break Desktop settings RPC or register a dead adapter', async () => {
++  const server = createServer();
++  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
++  const f = await fixture({ paired: true, port: server.address().port });
++  try {
++    assert.ok(f.ctx.settingsController.describe().namespaces.some(n => n.ns === 'locale'));
++    assert.deepEqual(f.ctx.llm.listProviders(), []);
++  } finally { await f.close(); await new Promise(resolve => server.close(resolve)); }
++});
++
++test('0.2.2 prepared conversation receives authenticated worker tool calls and final text', async () => {
++  const f = await fixture({ paired: true });
++  const signal = AbortSignal.timeout(5000);
++  try {
++    const token = (await readFile(join(f.dir, 'web-bridge', 'token'), 'utf8')).trim();
++    const post = async (path, body) => {
++      const response = await fetch('http://127.0.0.1:3081' + path, { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token, origin: 'chrome-extension://' + 'a'.repeat(32) }, body: JSON.stringify({ clientId: 'desktop-test', version: '0.2.19', ...body }), signal });
++      assert.equal(response.status, 200); return response.json();
++    };
++    for (const kind of ['tool_calls', 'final']) {
++      const call = await f.ctx.llm.prepareCall({ provider: 'deepseek-web', model: 'deepseek-web' }, signal);
++      const receive = (async () => {
++        const chunks = [];
++        for await (const chunk of call.stream({ ...call.config, signal, sessionId: 'desktop-smoke', messages: [createUserMessage({ content: [{ type: 'text', text: 'Read a file' }], source: { kind: 'user' } })], tools: [{ name: 'read', description: 'read', parameters: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] } }] })) chunks.push(chunk);
++        return chunks;
++      })();
++      receive.catch(() => {});
++      let job;
++      for (let i = 0; i < 100 && !job; i++) { job = (await post('/worker/poll', {})).job; if (!job) await delay(10); }
++      assert.ok(job);
++      const text = JSON.stringify({ request_id: job.id, kind, text: 'Desktop round trip', ...(kind === 'tool_calls' ? { calls: [{ name: 'read', arguments: { path: 'test.txt' } }] } : {}) });
++      const result = await post('/job/' + job.id, { lease: job.lease, action: 'result', text });
++      assert.equal(result.ok, true);
++      const chunks = await receive;
++      assert.ok(chunks.some(c => c.type === 'finish' && c.reason.kind === (kind === 'tool_calls' ? 'tool-calls' : 'stop')));
++      if (kind === 'tool_calls') assert.ok(chunks.some(c => c.type === 'tool-call-delta' && c.name === 'read'));
++      else assert.ok(chunks.some(c => c.type === 'text-delta' && c.text === 'Desktop round trip'));
++    }
++    assert.ok(f.ctx.settingsController.describe().namespaces.some(n => n.ns === 'locale'));
++  } finally { await f.close(); }
++});
+diff --git a/tests/installer.test.mjs b/tests/installer.test.mjs
+new file mode 100644
+index 0000000..5163907
+--- /dev/null
++++ b/tests/installer.test.mjs
+@@ -0,0 +1,43 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, symlink, readlink } from 'node:fs/promises';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import { spawnSync } from 'node:child_process';
++import { fileURLToPath } from 'node:url';
++
++test('installer restores the full profile, including relative symlinks, if Desktop package installation fails', async () => {
++  const root = await mkdtemp(join(tmpdir(), 'desktop-install-'));
++  try {
++    const dir = join(root, 'profiles', 'desktop');
++    await mkdir(dir, { recursive: true });
++    const original = JSON.stringify({ name: 'test-profile', dependencies: {}, dsh: { profile: { bundles: ['keep'] } } });
++    await writeFile(join(dir, 'package.json'), original);
++    await writeFile(join(dir, 'cordis.patch.yml'), '# keep exact\n[]\n');
++    await writeFile(join(dir, 'state.txt'), 'keep state');
++    await symlink('state.txt', join(dir, 'state-link'));
++    const carrier = join(root, 'fake-dsh');
++    await writeFile(carrier, `#!/usr/bin/env node
++const fs = require('node:fs');
++const path = require('node:path');
++const args = process.argv.slice(2), dir = process.env.TEST_DESKTOP_DIR;
++if (args[0] === '--version') { console.log('0.2.2-rc.1'); }
++else if (args.includes('-p')) { console.log(JSON.stringify({profileDir:dir})); }
++else { fs.writeFileSync(path.join(dir,'package.json'),'broken during install'); process.exitCode=19; }
++`, { mode: 0o755 });
++    await mkdir(join(root, 'scripts'));
++    await mkdir(join(root, 'dist'));
++    await writeFile(join(root, 'dist', 'dsh-web-bridge-test.tgz'), 'unused: fake carrier rejects add');
++    const install = join(root, 'scripts', 'install-desktop.mjs');
++    await writeFile(install, await readFile(fileURLToPath(new URL('../scripts/install-desktop.mjs', import.meta.url))));
++    const result = spawnSync(process.execPath, [install, carrier], { encoding: 'utf8', env: { ...process.env, TEST_DESKTOP_DIR: dir } });
++    assert.equal(result.status, 1);
++    assert.match(result.stderr, /已恢复安装前 profile/);
++    assert.equal(await readFile(join(dir, 'package.json'), 'utf8'), original);
++    assert.equal(await readFile(join(dir, 'cordis.patch.yml'), 'utf8'), '# keep exact\n[]\n');
++    assert.equal(await readlink(join(dir, 'state-link')), 'state.txt');
++    assert.equal(await readFile(join(dir, 'state-link'), 'utf8'), 'keep state');
++    assert.ok((await readdir(join(root, 'profiles'))).some(name => name.startsWith('desktop.before-web-bridge-')));
++    assert.ok((await readdir(join(root, 'profiles'))).some(name => name.startsWith('desktop.failed-web-bridge-')));
++  } finally { await rm(root, { recursive: true, force: true }); }
++});
+diff --git a/tests/setup.test.mjs b/tests/setup.test.mjs
+index e3e2ab3..476779c 100644
+--- a/tests/setup.test.mjs
++++ b/tests/setup.test.mjs
+@@ -1,6 +1,8 @@
+ import test from 'node:test';
+ import assert from 'node:assert/strict';
+-import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
++import { mkdtemp, writeFile, readFile, rm, symlink, readdir } from 'node:fs/promises';
++import { spawnSync } from 'node:child_process';
++import { fileURLToPath } from 'node:url';
+ import { tmpdir } from 'node:os';
+ import { join } from 'node:path';
+ import { setup } from '../bin/dsh-web-bridge.mjs';
+@@ -15,13 +17,40 @@ test('setup pairs a real profile, preserves unrelated settings, and remains idem
+   const patch=await readFile(join(dir,'cordis.patch.yml'),'utf8');
+   assert.ok(patch.startsWith(original));assert.equal(result.chromeVersion,'0.2.19');
+   const config=JSON.parse(await readFile(join(result.chromeDir,'local-config.json'),'utf8'));
+-  assert.match(config.token,/^[A-Za-z0-9_-]{43}$/);assert.ok(patch.includes(config.token));
++  assert.match(config.token,/^[A-Za-z0-9_-]{43}$/);
++  assert.equal(patch,original);assert.ok(!patch.includes(config.token));
+   assert.equal(JSON.parse(await readFile(join(result.chromeDir,'manifest.json'),'utf8')).version,'0.2.19');
+   await setup(['--profile-dir',dir]);
+   assert.equal(await readFile(join(dir,'cordis.patch.yml'),'utf8'),patch);
+   assert.equal(JSON.parse(await readFile(join(result.chromeDir,'local-config.json'),'utf8')).token,config.token);
+  } finally {await rm(dir,{recursive:true,force:true});}
+ });
++
++test('CLI setup works through a symlink and creates a usable pairing directory', async () => {
++ const dir=await mkdtemp(join(tmpdir(),'dsh-symlink-'));
++ try {
++  await writeFile(join(dir,'package.json'),JSON.stringify({dsh:{profile:{bundles:[]}}}));
++  const entry=join(dir,'bridge-link.mjs');
++  await symlink(fileURLToPath(new URL('../bin/dsh-web-bridge.mjs',import.meta.url)),entry);
++  const result=spawnSync(process.execPath,[entry,'setup','--profile-dir',dir],{encoding:'utf8'});
++  assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/配对文件已准备/);
++  assert.ok((await readdir(join(dir,'web-bridge','chrome'))).includes('local-config.json'));
++ } finally {await rm(dir,{recursive:true,force:true});}
++});
++
++test('setup backs up and removes only its legacy managed patch block', async () => {
++ const dir=await mkdtemp(join(tmpdir(),'dsh-migrate-'));
++ try {
++  await writeFile(join(dir,'package.json'),JSON.stringify({dsh:{profile:{bundles:[]}}}));
++  const unrelated='- id: unrelated\n  config:\n    enabled: true\n';
++  const legacy=unrelated+'\n# BEGIN DSH WEB BRIDGE (managed)\n- id: deepseek-web-bridge\n  config:\n    token: old-inline-secret\n# END DSH WEB BRIDGE (managed)\n';
++  await writeFile(join(dir,'cordis.patch.yml'),legacy);
++  await setup(['--profile-dir',dir]);
++  assert.equal(await readFile(join(dir,'cordis.patch.yml'),'utf8'),unrelated+'\n\n');
++  const backup=(await readdir(dir)).find(name=>name.startsWith('cordis.patch.yml.web-bridge-backup-'));
++  assert.equal(await readFile(join(dir,backup),'utf8'),legacy);
++ } finally {await rm(dir,{recursive:true,force:true});}
++});
+ test('setup handles empty YAML and rejects an existing manual bridge or a non-profile',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'dsh-empty-'));
+  try{
+@@ -30,7 +59,7 @@ test('setup handles empty YAML and rejects an existing manual bridge or a non-pr
+   await writeFile(join(dir,'package.json'),JSON.stringify({dsh:{profile:{}}}));
+   await writeFile(join(dir,'cordis.patch.yml'),'# empty\n[]\n');
+   await setup(['--profile-dir',dir]);
+-  assert.ok(!(await readFile(join(dir,'cordis.patch.yml'),'utf8')).includes('[]'));
++  assert.equal(await readFile(join(dir,'cordis.patch.yml'),'utf8'),'# empty\n[]\n');
+   const manual='- insert:\n    - id: deepseek-web-bridge\n      name: dsh-web-bridge\n';
+   await writeFile(join(dir,'cordis.patch.yml'),manual);
+   await assert.rejects(setup(['--profile-dir',dir]),/手工配置/);

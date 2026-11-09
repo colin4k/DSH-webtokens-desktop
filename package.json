@@ -1,0 +1,74 @@
+{
+  "name": "dsh-web-bridge",
+  "version": "0.2.16-desktop.1",
+  "description": "DeepSeek Harness Desktop 0.2.2-rc.1 browser bridge",
+  "type": "module",
+  "main": "./plugins/dsh-web-bridge/index.js",
+  "exports": {
+    ".": "./plugins/dsh-web-bridge/index.js",
+    "./package.json": "./package.json",
+    "./client": "./plugins/dsh-web-bridge/client.js",
+    "./cordis.patch.yml": "./plugins/dsh-web-bridge/cordis.patch.yml",
+    "./setup": "./bin/dsh-web-bridge.mjs"
+  },
+  "bin": {
+    "dsh-web-bridge": "./bin/dsh-web-bridge.mjs"
+  },
+  "files": [
+    "plugins/dsh-web-bridge/",
+    "extension/*.js",
+    "extension/manifest.json",
+    "extension/package.json",
+    "extension/popup.html",
+    "bin/",
+    "README.md",
+    "SOURCE.json",
+    "VERIFICATION.md",
+    "DESKTOP.md",
+    "ADAPTATION.json",
+    "scripts/install-desktop.mjs",
+    "scripts/rollback-desktop.mjs"
+  ],
+  "engines": {
+    "node": ">=24.9.0",
+    "dsh": "0.2.2-rc.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/colin4k/DSH-webtokens.git"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./plugins/dsh-web-bridge/cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-renderer"
+      ],
+      "platform": "web"
+    }
+  },
+  "dependencies": {
+    "ajv": "8.20.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.1.0",
+    "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
+    "@deepseek-ai/schemastery": "~3.19.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "verify:source": "node scripts/verify-source.mjs"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.1.0",
+    "@deepseek-ai/dsh-llm": "0.2.2-rc.1",
+    "@deepseek-ai/schemastery": "3.19.0",
+    "@deepseek-ai/dsh-app-boot": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-settings": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-config-editor": "0.2.2-rc.1",
+    "@deepseek-ai/dsh-api-settings-controller": "0.2.2-rc.1",
+    "pnpm": "11.28.5"
+  }
+}
