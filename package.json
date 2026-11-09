@@ -35,7 +35,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/colin4k/DSH-webtokens.git"
+    "url": "git+https://github.com/colin4k/DSH-webtokens-desktop.git"
   },
   "dsh": {
     "bundle": {

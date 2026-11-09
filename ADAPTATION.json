@@ -12,7 +12,7 @@
     "bin/dsh-web-bridge.mjs": "b5bed4c5fec057575e6ea06fa963ffc982e71683f9623ddc5f5844cf498aaa82",
     "extension/background.js": "f50f38a7b2a081fb820894e64f68fbcb8781f43d39ef9b3b9b47566ae7b1cac0",
     "package-lock.json": "626653ed00bada020008f6aabdbc56a24d45c58073995abf2d8c019d50e995a4",
-    "package.json": "07898f6dd92abeae47b7ece1c3ead95af98731d68d64c4b055524cea6657ba81",
+    "package.json": "389368922eebc703bd67faa3cab7dbd13053f773985c4332ebb3efe941a88be0",
     "plugins/dsh-web-bridge/cordis.patch.yml": "b009c2b8fee3825feaf9f008e9334feb798af23da34d5d333b5aaf619151c1c1",
     "plugins/dsh-web-bridge/index.js": "97227d39d7cee81bafdf5d1f31f42e92bbb4aa35a711d30582418c31645664f7",
     "plugins/dsh-web-bridge/package.json": "22eedd526822416c52b2fc7a388dce3350637622757ab14f7e275fbd3247ee70",
