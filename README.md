@@ -4,6 +4,8 @@
 
 本分支版本 `0.2.16-desktop.1`，仅面向 Desktop `0.2.2-rc.1`。Chrome 扩展协议保持 `0.2.19`。
 
+致谢：本项目参考并修改了 [xinyuquan985-coder/DSH-webtokens](https://github.com/xinyuquan985-coder/DSH-webtokens) 的代码。
+
 请先阅读 [完整安装、分析、验证和回滚说明](DESKTOP.md)。
 
 安装：退出 Desktop，在解压目录运行：
