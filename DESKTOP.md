@@ -19,7 +19,7 @@ node scripts/install-desktop.mjs /usr/local/bin/dsh
 
 5. Chrome 打开 `chrome://extensions`，移除旧桥接扩展，加载上述目录。
 6. 在 Chrome 登录 `https://chat.deepseek.com/`，重新打开 Desktop，模型菜单选择“DeepSeek 网页”。
-7. 先发简单消息，再在一个测试项目中测试读取文件、写入文件、检查副本。真实网页、Electron 壳和用户本机环境仍需做这一轮验收。
+7. 先发简单消息，再在一个测试项目中测试读取文件、写入文件、检查副本。已在真实 macOS Desktop 0.2.2-rc.1 + Chrome（macOS 27.2、Chrome 156.0.8078.81）上完成这一轮验收，全部通过，见“验证范围”。
 
 普通更新仍需退出 Desktop，运行安装脚本，再重新加载 Chrome 扩展。不要用 npm 安装的 `dsh` 管理 Desktop。
 
@@ -68,7 +68,7 @@ node scripts/rollback-desktop.mjs "/Users/colin/.dsh/profiles/desktop.before-web
 - 端口冲突不影响设置读取；setup 符号链接入口、旧配置迁移和幂等性。
 - 原有协议、正文保真、工具参数校验、取消、上下文续接、面板回归。
 
-没有运行 macOS Electron 应用、真实 DeepSeek 登录或真实网页 DOM 端到端验收；不宣称已在用户 Mac 上实测成功。安装脚本保留备份和回滚。
+已在真实 macOS Desktop 0.2.2-rc.1 + Chrome（macOS 27.2、Chrome 156.0.8078.81）上完成第 7 步验收：简单消息发送与回复正常，测试项目中读取文件、写入文件、检查副本全部通过。安装脚本保留备份和回滚。
 
 ## 源码依据
 
